@@ -1,162 +1,169 @@
 # zer0lint
 
-**mem0 extraction optimizer** — Inspect your system, generate the extraction prompt that works for you, test it, apply it.
+**AI memory extraction diagnostics.** Find out why your AI agent forgets what matters — and fix it.
 
-mem0's default extraction prompt is built for personal preference tracking. For technical work, research, code decisions, or domain-specific agents, it silently drops facts you need to remember.
+[![PyPI](https://img.shields.io/badge/coming%20soon-PyPI-blue)](https://pypi.org/project/zer0lint/)
+[![License](https://img.shields.io/badge/license-Apache%202.0-green)](LICENSE)
+[![Made by Hermes Labs](https://img.shields.io/badge/made%20by-Hermes%20Labs-purple)](https://hermes-labs.ai)
 
-zer0lint looks at what's actually in your memory, identifies the patterns, and generates a custom extraction prompt tuned to your system.
+---
+
+## The Problem
+
+You set up mem0 (or Zep, or LangMem) and your AI agent still seems forgetful. Technical decisions, version numbers, experiment results — it stores them, but can't recall them.
+
+**Why?** mem0's default extraction prompt is designed for personal assistants: favorite coffee shops, dietary preferences, weekend plans. When your agent stores "Redis upgraded to v7.2.4" or "security audit scored 7.2/10", it silently drops the specifics.
+
+**Proven gap (our testing):**
+- Default mem0 prompt → **70% recall** on technical facts
+- Wrong domain prompt (personal) → **40% recall**
+- zer0lint technical prompt → **90% recall**
+
+That's a **+20pp improvement** from getting the extraction prompt right.
+
+---
 
 ## Quick Start
 
 ```bash
-pip install zer0lint
+pip install zer0lint  # coming soon
 
-# Generate an optimized prompt for your mem0 system
-zer0lint generate --config ~/.mem0/config.json --verbose
+# Check your current extraction health
+zer0lint check --config ~/.mem0/config.json
 
-# It will:
-# 1. Sample your existing memories
-# 2. Analyze what categories of info you store
-# 3. Generate a domain-specific extraction prompt
-# 4. Test it against synthetic facts
-# 5. Apply it to your config (if score >= 4/5)
+# Diagnose and fix
+zer0lint generate --config ~/.mem0/config.json
+
+# Dry run (see what would change without applying)
+zer0lint generate --config ~/.mem0/config.json --dry-run
 ```
 
-## The Problem We're Solving
+---
 
-You set up mem0 to store facts from your work. But it keeps dropping technical details, version numbers, test results, or domain-specific information — silently, with no warning.
+## What It Does
 
-**Why?** mem0's default extraction prompt is optimized for general-purpose memory. When you ask it to remember "port 8421 TLS config", it returns empty. When you ask it to remember "my favorite coffee shop", it works fine.
-
-**What we discovered:** The fix isn't a preset prompt. The fix is analyzing YOUR actual memories and generating THE prompt that matches YOUR patterns.
-
-We did this manually for our own system:
-- Day 1: Installed mem0, got 0/5 extraction ❌
-- Days 2-9: Tried different models, analyzed patterns, wrote a custom prompt
-- Day 10: 5/5 extraction ✅
-
-zer0lint does this process automatically. One command.
-
-## How It Works
+### `zer0lint check`
+Tests your current mem0 config against domain-relevant synthetic facts. Returns a score and status.
 
 ```
-zer0lint generate
-├─ 1. Sample 20-30 of your existing memories
-├─ 2. Identify patterns: What info do you actually store?
-├─ 3. Generate a prompt matching those patterns
-├─ 4. Test against synthetic facts (score it)
-├─ 5. Iterate if needed (up to 3 rounds)
-└─ 6. Apply to config (if score >= 4/5)
+zer0lint v0.2.0 — extraction health check
+Config : ~/.mem0/config.json
+Model  : qwen3.5:4b
+Prompt : default (mem0 built-in)
+
+Score  : 4/5 (80%) — HEALTHY
+
+  ✅ Version update
+  ✅ CI status
+  ✅ Model upgrade
+  ✅ Configuration
+  ⚠  API endpoint
 ```
 
-The generated prompt is tailored to your system's actual data.
+Statuses: **HEALTHY** (≥80%) · **ACCEPTABLE** (60–79%) · **DEGRADED** (40–59%) · **CRITICAL** (<40%)
 
-## Requirements
+### `zer0lint generate`
+3-phase diagnostic + fix:
 
-- Python 3.9+
-- mem0ai (pip installed)
-- A configured mem0 instance with existing memories (or willingness to bootstrap)
-- An extraction LLM (Ollama local, OpenAI, Groq, etc. — whatever mem0 supports)
+1. **Baseline** — test your config as-is
+2. **Re-test** — inject zer0lint's domain-aware extraction prompt at config level
+3. **Apply** — if improved, write the validated prompt to your config
+
+```
+zer0lint v0.2.0 — extraction optimizer
+
+[1/3] Baseline — testing current config as-is...
+  Baseline score: 4/5 (80%)
+
+[2/3] Re-testing with zer0lint technical extraction prompt...
+  Improved score: 5/5 (100%)
+  Improvement: +20pp
+
+Results:
+  Before : 4/5 (80%)
+  After  : 5/5 (100%)
+  Δ      : +20pp
+
+✅ Fix applied to config.
+   Backup: ~/.mem0/config.backup.2026-03-23T14:20:00
+```
+
+---
+
+## Why Config-Level Injection Matters
+
+**Important finding:** In mem0 v1.x, passing a prompt via `memory.add(..., prompt=X)` has **no measurable effect** on retrieval quality. The extraction prompt must live in the config (`custom_fact_extraction_prompt` field) to actually work.
+
+zer0lint writes the validated prompt directly to your config — this is the correct fix.
+
+---
+
+## Supported Systems
+
+| System | Status | Notes |
+|---|---|---|
+| mem0 (v1.x) | ✅ Supported | Full check + generate |
+| Zep / Graphiti | 🔜 Planned | v0.3 |
+| LangMem | 🔜 Planned | v0.4 |
+| Generic adapter | 🔜 Planned | BYOC callables |
+
+---
+
+## Test Results (2026-03-23)
+
+Horse race across models (5 technical + research facts):
+
+| Model | Default prompt | zer0lint prompt | Δ |
+|---|---|---|---|
+| qwen3.5:4b | 80% | **100%** | +20pp |
+| mistral:7b | 40% | 40% | 0pp |
+
+**mistral:7b** produces malformed JSON regardless of prompt — model quality is the bottleneck. zer0lint detects this and recommends switching models.
+
+Scale test (10 facts, 5 domains):
+
+| | Score | % |
+|---|---|---|
+| Default | 7/10 | 70% |
+| zer0lint | 9/10 | **90%** | 
+
+---
 
 ## Installation
 
 ```bash
+# From source (current)
+git clone https://github.com/roli-lpci/zer0lint
+cd zer0lint
+pip install -e .
+
+# PyPI (coming soon)
 pip install zer0lint
 ```
 
-## Usage
-
-### Generate an Optimized Prompt
-
-```bash
-zer0lint generate --config ~/.mem0/config.json --verbose
-```
-
-Options:
-- `--config PATH` — Path to mem0 config.json (auto-detects ~/.mem0/config.json if not provided)
-- `--verbose` / `-v` — Show detailed progress
-- `--apply` / `--no-apply` — Apply the prompt to config (default: apply)
-
-Output:
-```
-zer0lint v0.1.0 — mem0 extraction optimizer
-
-Config: /Users/you/.mem0/config.json
-Running optimization flow...
-
-✓ Optimization successful
-
-Extraction quality: 5/5
-
-Generated prompt:
-[shows the custom prompt]
-
-✓ Prompt applied to config
-  Backup saved: /Users/you/.mem0/config.json.backup.2026-03-23T00:30:45
-
-Log:
-  • Sampled 28 memories
-  • Detected categories: ['technical', 'research']
-  • Generated 5 test facts
-  • Generated prompt via LLM analysis
-  • Prompt tested: 5/5
-  • Applied prompt to config
-```
-
-## What Gets Generated?
-
-The generated extraction prompt includes:
-
-1. **Domain-specific categories** — Identified from your actual memories
-2. **Category descriptions** — What this system should remember
-3. **Concrete examples** — Input → Output in JSON format
-4. **Extraction instructions** — "Extract generously, be specific"
-
-Example generated prompt (technical domain):
-
-```
-You are a Technical Memory Organizer for software infrastructure.
-
-Extract ALL technically significant facts. Focus on:
-1. API endpoints, ports, and service addresses
-2. Version numbers, model names, package identifiers
-3. Configuration values, environment variables
-4. Code decisions, architectural choices
-...
-
-Examples:
-Input: "The API server runs on port 8421 with TLS enabled."
-Output: {"facts": ["API server runs on port 8421", "TLS enabled"]}
-
-Return facts as JSON with key "facts" and a list of strings. Extract generously.
-```
-
-## Limitations (v0.1)
-
-- Requires at least 10-20 existing memories to identify patterns reliably
-- Works with mem0ai >= 0.1.0
-- No batch/async mode yet
-- Iteration limit: 3 rounds (hardcoded)
-- Does not modify memory content, only the extraction prompt
-
-## Next Steps (v0.2)
-
-- `zer0lint check` — Standalone health check without generation
-- `zer0lint compare` — Side-by-side before/after comparison
-- Prompt history and rollback
-- Custom category hints (user-provided domain info)
-- Integration with mem0's web UI
-
-## Contributing
-
-Found a bug? Have ideas? Open an issue or PR at github.com/roli-lpci/zer0lint
-
-## License
-
-MIT
+**Requirements:** Python 3.9+, mem0 v1.x, an Ollama or cloud LLM configured in your mem0 config.
 
 ---
 
-**Made by Hermes Labs** — AI research & safety tooling | hermes-labs.ai
+## How It Works
 
-Questions? → rolando@hermes-labs.ai
+zer0lint reads your existing mem0 config, borrows whatever LLM you already have configured, and runs a controlled recall test. No new API keys, no new models, no cloud calls beyond what you already have.
+
+The extraction prompt it generates is **domain-aware** — tuned for technical/research work rather than personal assistant use cases. It's validated against synthetic facts before being applied, and your original config is always backed up.
+
+---
+
+## Built by Hermes Labs
+
+zer0lint is part of the [Hermes Labs](https://hermes-labs.ai) AI agent tooling suite:
+
+- **[lintlang](https://github.com/roli-lpci/lintlang)** — Static linter for AI agent tool descriptions and prompts
+- **[Little Canary](https://github.com/roli-lpci/little-canary)** — Prompt injection detection
+- **[Suy Sideguy](https://github.com/roli-lpci/suy-sideguy)** — Runtime policy enforcement for agents
+- **zer0lint** — Memory extraction diagnostics ← you are here
+
+---
+
+## License
+
+Apache 2.0
