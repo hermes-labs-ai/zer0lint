@@ -9,7 +9,7 @@ from typing import Optional
 from zer0lint.analyzer import analyze_with_llm, fallback_prompt_from_patterns
 from zer0lint.fixer import apply_prompt, detect_extraction_model, detect_vector_store
 from zer0lint.sampler import analyze_sample_content, sample_memories
-from zer0lint.tester import generate_test_facts_for_categories, test_extraction_prompt
+from zer0lint.tester import generate_test_facts_for_categories, validate_extraction_prompt
 
 
 def run_generate(
@@ -108,7 +108,7 @@ def run_generate(
         # Step 6: Test the generated prompt against test facts
         if verbose:
             print(f"  Testing prompt...")
-        test_result = test_extraction_prompt(memory, test_facts, generated_prompt)
+        test_result = validate_extraction_prompt(memory, test_facts, generated_prompt)
         final_score = test_result["score"]
         if verbose:
             print(f"    Score: {final_score}/{test_result['total']}")

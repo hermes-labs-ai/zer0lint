@@ -4,12 +4,16 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from zer0lint.tester import TestFact, generate_test_facts_for_categories, test_extraction_prompt
+from zer0lint.tester import (
+    SyntheticFact,
+    generate_test_facts_for_categories,
+    validate_extraction_prompt,
+)
 
 
 def test_test_fact_model():
     """Test TestFact dataclass."""
-    fact = TestFact(
+    fact = SyntheticFact(
         label="API port",
         text="The API server runs on port 8421.",
         keywords=["8421", "port"],
@@ -24,7 +28,7 @@ def test_generate_test_facts_technical():
     facts = generate_test_facts_for_categories(["technical"], count=5)
 
     assert len(facts) == 5
-    assert all(isinstance(f, TestFact) for f in facts)
+    assert all(isinstance(f, SyntheticFact) for f in facts)
     assert all(len(f.keywords) > 0 for f in facts)
 
 
@@ -70,10 +74,10 @@ def test_test_extraction_prompt_success():
     ]
 
     test_facts = [
-        TestFact(label="API port", text="API on port 8421", keywords=["8421"]),
+        SyntheticFact(label="API port", text="API on port 8421", keywords=["8421"]),
     ]
 
-    result = test_extraction_prompt(mock_memory, test_facts, "test prompt")
+    result = validate_extraction_prompt(mock_memory, test_facts, "test prompt")
 
     assert result["score"] == 1
     assert result["total"] == 1
@@ -87,10 +91,10 @@ def test_test_extraction_prompt_failure():
     mock_memory.search.return_value = []  # No results
 
     test_facts = [
-        TestFact(label="API port", text="API on port 8421", keywords=["8421"]),
+        SyntheticFact(label="API port", text="API on port 8421", keywords=["8421"]),
     ]
 
-    result = test_extraction_prompt(mock_memory, test_facts, "test prompt")
+    result = validate_extraction_prompt(mock_memory, test_facts, "test prompt")
 
     assert result["score"] == 0
     assert result["total"] == 1
@@ -109,11 +113,11 @@ def test_test_extraction_prompt_partial():
     ]
 
     test_facts = [
-        TestFact(label="port", text="API on port 8421", keywords=["8421"]),
-        TestFact(label="model", text="Using gpt-4o-mini", keywords=["gpt-4o-mini"]),
+        SyntheticFact(label="port", text="API on port 8421", keywords=["8421"]),
+        SyntheticFact(label="model", text="Using gpt-4o-mini", keywords=["gpt-4o-mini"]),
     ]
 
-    result = test_extraction_prompt(mock_memory, test_facts, "test prompt")
+    result = validate_extraction_prompt(mock_memory, test_facts, "test prompt")
 
     assert result["score"] == 1
     assert result["total"] == 2
@@ -125,9 +129,9 @@ def test_test_extraction_prompt_add_failure():
     mock_memory.add.side_effect = Exception("Add failed")
     mock_memory.search.return_value = []
 
-    test_facts = [TestFact(label="test", text="test fact", keywords=["test"])]
+    test_facts = [SyntheticFact(label="test", text="test fact", keywords=["test"])]
 
-    result = test_extraction_prompt(mock_memory, test_facts, "test prompt")
+    result = validate_extraction_prompt(mock_memory, test_facts, "test prompt")
 
     assert result["score"] == 0
     assert len(result["failures"]) > 0

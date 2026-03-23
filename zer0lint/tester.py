@@ -9,7 +9,7 @@ from typing import Optional
 
 
 @dataclass
-class TestFact:
+class SyntheticFact:
     """A synthetic fact used to test extraction quality."""
 
     label: str
@@ -17,7 +17,7 @@ class TestFact:
     keywords: list[str]
 
 
-def generate_test_facts_for_categories(categories: list[str], count: int = 5) -> list[TestFact]:
+def generate_test_facts_for_categories(categories: list[str], count: int = 5) -> list[SyntheticFact]:
     """
     Generate synthetic test facts matching detected categories.
 
@@ -31,135 +31,135 @@ def generate_test_facts_for_categories(categories: list[str], count: int = 5) ->
     # Category-specific fact generators
     generators = {
         "technical": [
-            TestFact(
+            SyntheticFact(
                 label="API endpoint",
                 text="The API service runs on port 8421 with TLS 1.3 enabled.",
                 keywords=["8421", "port", "api"],
             ),
-            TestFact(
+            SyntheticFact(
                 label="Model upgrade",
                 text="We switched from gpt-3.5-turbo to gpt-4o-mini to reduce token costs by 40%.",
                 keywords=["gpt-4o-mini", "model", "tokens"],
             ),
-            TestFact(
+            SyntheticFact(
                 label="Version update",
                 text="Updated Redis cluster to v7.2.4 with improved persistence.",
                 keywords=["7.2.4", "redis", "version"],
             ),
-            TestFact(
+            SyntheticFact(
                 label="CI status",
                 text="CI pipeline passed on 2026-03-22 at commit a3f8c12.",
                 keywords=["2026-03-22", "ci", "passed"],
             ),
-            TestFact(
+            SyntheticFact(
                 label="Configuration",
                 text="Auth tokens expire after 3600 seconds; max connections set to 500.",
                 keywords=["3600", "token", "config"],
             ),
         ],
         "research": [
-            TestFact(
+            SyntheticFact(
                 label="Hypothesis",
                 text="We hypothesize that embedding-based routing reduces inference latency by 60%.",
                 keywords=["hypothesis", "embedding", "latency"],
             ),
-            TestFact(
+            SyntheticFact(
                 label="Finding",
                 text="Our experiments show null-result bias affects 19.6-56.7pp of LLM outputs across domains.",
                 keywords=["finding", "null-result", "bias"],
             ),
-            TestFact(
+            SyntheticFact(
                 label="Dataset",
                 text="We use Banking77 (77 classes, 3080 queries) for classification benchmarking.",
                 keywords=["banking77", "dataset", "classes"],
             ),
-            TestFact(
+            SyntheticFact(
                 label="Methodology",
                 text="Twin-environment simulation allows testing without production access.",
                 keywords=["methodology", "simulation", "test"],
             ),
-            TestFact(
+            SyntheticFact(
                 label="Citation",
                 text="See Wittgenstein's Philosophical Investigations (1953) on language games.",
                 keywords=["citation", "wittgenstein", "1953"],
             ),
         ],
         "medical": [
-            TestFact(
+            SyntheticFact(
                 label="Symptom",
                 text="Patient reported fever (39.2°C), headache, and fatigue for 3 days.",
                 keywords=["fever", "symptom", "temperature"],
             ),
-            TestFact(
+            SyntheticFact(
                 label="Diagnosis",
                 text="Diagnosed with acute bronchitis based on chest X-ray and clinical presentation.",
                 keywords=["diagnosis", "bronchitis", "x-ray"],
             ),
-            TestFact(
+            SyntheticFact(
                 label="Medication",
                 text="Prescribed amoxicillin 500mg three times daily for 10 days.",
                 keywords=["amoxicillin", "medication", "dosage"],
             ),
-            TestFact(
+            SyntheticFact(
                 label="Test result",
                 text="Blood glucose level: 112 mg/dL (normal range 70-100).",
                 keywords=["glucose", "test", "112"],
             ),
-            TestFact(
+            SyntheticFact(
                 label="Procedure",
                 text="Performed lumbar puncture to collect cerebrospinal fluid for analysis.",
                 keywords=["lumbar", "procedure", "csf"],
             ),
         ],
         "legal": [
-            TestFact(
+            SyntheticFact(
                 label="Contract clause",
                 text="Section 3.2 specifies indemnification obligations for both parties.",
                 keywords=["clause", "section", "indemnification"],
             ),
-            TestFact(
+            SyntheticFact(
                 label="Deadline",
                 text="Closing date for acquisition is June 30, 2026.",
                 keywords=["deadline", "closing", "2026-06-30"],
             ),
-            TestFact(
+            SyntheticFact(
                 label="Statute",
                 text="This is governed by the Commercial Code Section 2-501 (Risk of Loss).",
                 keywords=["statute", "commercial", "2-501"],
             ),
-            TestFact(
+            SyntheticFact(
                 label="Party information",
                 text="Seller: Acme Corp (Delaware corporation); Buyer: TechStart Inc (California).",
                 keywords=["party", "seller", "buyer"],
             ),
-            TestFact(
+            SyntheticFact(
                 label="Obligation",
                 text="Buyer must complete due diligence within 45 days of execution.",
                 keywords=["obligation", "due diligence", "45"],
             ),
         ],
         "financial": [
-            TestFact(
+            SyntheticFact(
                 label="Transaction",
                 text="Invested $50,000 in NVDA shares at $875.42 on 2026-03-20.",
                 keywords=["50000", "nvda", "transaction"],
             ),
-            TestFact(
+            SyntheticFact(
                 label="Rate",
                 text="Fixed rate mortgage: 4.85% for 30 years, payment $2,145/month.",
                 keywords=["4.85%", "rate", "mortgage"],
             ),
-            TestFact(
+            SyntheticFact(
                 label="Position",
                 text="Current portfolio: 40% stocks, 35% bonds, 15% cash, 10% alternatives.",
                 keywords=["position", "40%", "portfolio"],
             ),
-            TestFact(
+            SyntheticFact(
                 label="Risk parameter",
                 text="Set stop-loss at 15% below entry; take-profit at 30%.",
                 keywords=["risk", "stop-loss", "15%"],
             ),
-            TestFact(
+            SyntheticFact(
                 label="Budget item",
                 text="Marketing spend budgeted at $250K for Q2 2026.",
                 keywords=["budget", "250k", "marketing"],
@@ -178,7 +178,7 @@ def generate_test_facts_for_categories(categories: list[str], count: int = 5) ->
     # If no categories matched, use a generic fallback
     if not test_facts:
         test_facts = [
-            TestFact(
+            SyntheticFact(
                 label="Generic fact",
                 text="This is a test fact to validate extraction is working.",
                 keywords=["test", "fact"],
@@ -188,8 +188,8 @@ def generate_test_facts_for_categories(categories: list[str], count: int = 5) ->
     return test_facts[:count]
 
 
-def test_extraction_prompt(
-    memory: object, test_facts: list[TestFact], extraction_prompt: str
+def validate_extraction_prompt(
+    memory: object, test_facts: list[SyntheticFact], extraction_prompt: str
 ) -> dict:
     """
     Test an extraction prompt against synthetic facts.
