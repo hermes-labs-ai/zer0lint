@@ -92,7 +92,7 @@ Works with cogito-ergo, Zep, LangMem, or any custom HTTP memory API.
 Injects 5 synthetic technical facts into your live mem0 instance, then measures round-trip recall. Uses your existing LLM — no new API keys or models required.
 
 ```
-zer0lint v0.0.3 — extraction health check
+zer0lint v0.2.1 — extraction health check
 Config : ~/.mem0/config.json
 Model  : mistral:7b
 Prompt : default (mem0 built-in)

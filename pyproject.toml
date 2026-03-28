@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "zer0lint"
-version = "0.0.3"
+version = "0.2.1"
 description = "AI memory extraction diagnostics — works with mem0 or any HTTP memory endpoint"
 readme = "README.md"
 requires-python = ">=3.9"
