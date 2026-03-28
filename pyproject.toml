@@ -5,13 +5,35 @@ build-backend = "hatchling.build"
 [project]
 name = "zer0lint"
 version = "0.2.1"
-description = "AI memory extraction diagnostics — works with mem0 or any HTTP memory endpoint"
+description = "AI memory extraction diagnostics — works with mem0 or any HTTP memory endpoint. By Hermes Labs."
 readme = "README.md"
+license = {text = "Apache-2.0"}
 requires-python = ">=3.9"
+authors = [
+    {name = "Hermes Labs", email = "roli@hermes-labs.ai"},
+]
+keywords = [
+    "ai", "agents", "memory", "mem0", "extraction", "diagnostics",
+    "llm", "ollama", "retrieval", "vector-store",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Topic :: Software Development :: Testing",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
 dependencies = [
     "typer[all]>=0.9.0",
     "rich>=13.0.0",
 ]
+
+[project.urls]
+Homepage = "https://hermes-labs.ai"
+Repository = "https://github.com/roli-lpci/zer0lint"
+Documentation = "https://github.com/roli-lpci/zer0lint#readme"
+Issues = "https://github.com/roli-lpci/zer0lint/issues"
 
 [project.optional-dependencies]
 mem0 = ["mem0ai>=1.0.0"]
