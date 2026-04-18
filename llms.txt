@@ -1,3 +1,4 @@
+# Owner: Hermes Labs - https://hermes-labs.ai
 # zer0lint
 
 > AI memory extraction diagnostics for mem0. Diagnoses silent extraction failures and fixes them in one command.
@@ -112,7 +113,7 @@ Scale test, 10 facts, 5 domains:
 zer0lint -> cogito-ergo -> zer0dex
 
 zer0lint (this): ingestion health layer — diagnose and fix extraction before anything else
-cogito-ergo (https://github.com/roli-lpci/cogito-ergo): two-stage retrieval (zero-LLM multi-query pool + integer-pointer LLM filter). 85% R@1, 96% hit@any. Uses zer0lint extraction prompt by default.
+cogito-ergo (https://github.com/roli-lpci/cogito-ergo): two-stage retrieval (zero-LLM multi-query pool + integer-pointer LLM filter). Uses zer0lint extraction prompt by default.
 zer0dex (https://github.com/roli-lpci/zer0dex): dual-layer memory (compressed index + vector store). Relies on correct extraction upstream.
 
 ## Hermes Labs suite

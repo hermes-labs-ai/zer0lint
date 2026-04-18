@@ -1,3 +1,4 @@
+# Owner: Hermes Labs - https://hermes-labs.ai
 # zer0lint — AI Agent Integration Guide
 
 This file describes zer0lint's behavior, decision logic, and integration contracts for AI agents and coding assistants.

@@ -232,23 +232,6 @@ It injects known facts, measures how many survive the extraction round-trip, gen
 
 ---
 
-## Ecosystem
-
-zer0lint is the first step — diagnose ingestion before you optimize retrieval.
-
-```
-Is extraction working?     →  zer0lint check
-Fix extraction             →  zer0lint generate
-Deploy retrieval           →  cogito-ergo (two-stage retrieval, 85% R@1)
-Add dual-layer indexing    →  zer0dex (compressed index + vector store)
-```
-
-**[cogito-ergo](https://github.com/roli-lpci/cogito-ergo)** — Production two-stage memory retrieval: zero-LLM multi-query candidate pool + integer-pointer LLM filter. Uses zer0lint's extraction prompt by default. No point tuning retrieval on a broken store.
-
-**[zer0dex](https://github.com/roli-lpci/zer0dex)** — Dual-layer memory architecture (compressed MEMORY.md index + mem0 vector store). Relies on correct extraction upstream — run zer0lint first.
-
----
-
 ## Installation
 
 ```bash

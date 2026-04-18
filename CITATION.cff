@@ -1,0 +1,10 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "zer0lint"
+authors:
+  - family-names: Bosch
+    given-names: Rolando
+    email: rbosch@lpci.ai
+    affiliation: Hermes Labs
+license: Apache-2.0
+repository-code: https://github.com/roli-lpci/zer0lint
