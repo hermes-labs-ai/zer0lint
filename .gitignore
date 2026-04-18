@@ -10,3 +10,10 @@ build/
 .ruff_cache/
 .pytest_cache/
 .mypy_cache/
+
+# PII / outreach — NEVER commit. See 2026-04-17 incident.
+_launch/outreach/
+_launch/**/email-targets.csv
+_launch/**/*leads*.csv
+_launch/**/*targets*.csv
+_launch/**/*contacts*.csv
