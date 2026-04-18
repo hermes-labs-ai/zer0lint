@@ -1,0 +1,31 @@
+flowchart TD
+    A[Developer runs: zer0lint check] --> B{Mode?}
+    B -- mem0 config --> C[Load ~/.mem0/config.json]
+    B -- HTTP mode --> D[Use --add-url / --search-url]
+
+    C --> E[Detect LLM from config]
+    D --> F[HTTP adapter]
+
+    E --> G[Inject 5 synthetic facts via mem0.add()]
+    F --> G2[POST facts to add endpoint]
+
+    G --> H[Wait for extraction]
+    G2 --> H2[Wait http-wait seconds]
+
+    H --> I[Query via mem0.search()]
+    H2 --> I2[GET from search endpoint]
+
+    I --> J[Score: facts recalled / total]
+    I2 --> J
+
+    J --> K{Score >= 80%?}
+    K -- YES --> L[HEALTHY - done]
+    K -- NO --> M[Run: zer0lint generate]
+
+    M --> N[Phase 1: Baseline test - current score]
+    N --> O[Phase 2: Re-test with zer0lint extraction prompt]
+    O --> P{Score improved?}
+    P -- YES --> Q[Phase 3: Write prompt to custom_fact_extraction_prompt in config]
+    P -- NO --> R[Report: no improvement - manual tuning needed]
+    Q --> S[Backup original config with ISO timestamp]
+    S --> T[FIXED - restart agent to pick up new prompt]
