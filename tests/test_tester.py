@@ -2,8 +2,6 @@
 
 from unittest.mock import MagicMock
 
-import pytest
-
 from zer0lint.tester import (
     SyntheticFact,
     generate_test_facts_for_categories,

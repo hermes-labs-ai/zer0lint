@@ -1,8 +1,7 @@
-"""zer0lint — mem0 extraction optimizer."""
+"""zer0lint package metadata."""
 
 __version__ = "0.2.1"
-__author__ = "Hermes Labs"
+__author__ = "Rolando Bosch"
 __description__ = (
-    "AI memory extraction diagnostics. Works with mem0 or any HTTP memory endpoint. "
-    "Inspects your system, generates custom extraction prompts, tests them."
+    "Memory extraction diagnostics for mem0 configs and HTTP memory endpoints."
 )

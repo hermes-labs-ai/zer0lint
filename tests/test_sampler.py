@@ -2,8 +2,6 @@
 
 from unittest.mock import MagicMock
 
-import pytest
-
 from zer0lint.sampler import MemorySample, analyze_sample_content, sample_memories
 
 

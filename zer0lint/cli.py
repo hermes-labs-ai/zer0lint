@@ -3,15 +3,11 @@
 from __future__ import annotations
 
 import json
-import sys
 from pathlib import Path
 from typing import Optional
 
 import typer
 from rich.console import Console
-from rich.panel import Panel
-from rich.syntax import Syntax
-from rich.table import Table
 
 from zer0lint import __version__
 from zer0lint.fixer import detect_extraction_model
@@ -20,7 +16,7 @@ from zer0lint.orchestrator import run_check, run_generate
 console = Console()
 err_console = Console(stderr=True)
 
-app = typer.Typer(help="zer0lint — AI memory extraction diagnostics")
+app = typer.Typer(help="zer0lint — memory extraction diagnostics for mem0 configs and HTTP memory endpoints")
 
 DEFAULT_CONFIG_CANDIDATES = [
     Path.home() / ".mem0" / "config.json",
@@ -81,7 +77,7 @@ def check(
     console.print(f"\n[bold]zer0lint v{__version__} — extraction health check[/bold]")
 
     if is_http:
-        console.print(f"Mode   : HTTP")
+        console.print("Mode   : HTTP")
         console.print(f"Add    : {add_url}")
         console.print(f"Search : {search_url}\n")
         result = run_check(
@@ -155,7 +151,7 @@ def generate(
     console.print(f"\n[bold]zer0lint v{__version__} — extraction optimizer[/bold]")
 
     if is_http:
-        console.print(f"Mode   : HTTP")
+        console.print("Mode   : HTTP")
         console.print(f"Add    : {add_url}")
         console.print(f"Search : {search_url}")
         if not apply:
@@ -202,7 +198,7 @@ def generate(
     impr_pct = result.get("improved_pct", 0)
     imp_pp = result.get("improvement_pp", 0)
 
-    console.print(f"\n[bold]Results:[/bold]")
+    console.print("\n[bold]Results:[/bold]")
     console.print(f"  Before : {result['initial_score']}/{result.get('total', 5) if 'total' in result else 5} ({init_pct:.0f}%)")
     console.print(f"  After  : {result['improved_score']}/{result.get('total', 5) if 'total' in result else 5} ({impr_pct:.0f}%)")
     imp_color = "green" if imp_pp > 0 else "red"
@@ -210,7 +206,7 @@ def generate(
 
     verdict = result.get("verdict")
     if verdict == "improved" and result.get("applied"):
-        console.print(f"\n[green]✅ Fix applied to config.[/green]")
+        console.print("\n[green]✅ Fix applied to config.[/green]")
         if result.get("backup_path"):
             console.print(f"   Backup: {result['backup_path']}")
         console.print("\n[dim]Restart your agent to pick up the new extraction prompt.[/dim]")
@@ -223,10 +219,10 @@ def generate(
     elif verdict == "improved" and not result.get("applied"):
         console.print(f"\n[cyan]Would improve by {imp_pp:+.0f}pp — run without --dry-run to apply.[/cyan]")
     elif verdict == "no_improvement":
-        console.print(f"\n[yellow]⚠ zer0lint prompt did not improve recall on this config.[/yellow]")
+        console.print("\n[yellow]⚠ zer0lint prompt did not improve recall on this config.[/yellow]")
         console.print("[dim]Your current setup may already be optimized, or a different domain prompt is needed.[/dim]")
     elif verdict == "below_threshold":
-        console.print(f"\n[yellow]⚠ Improvement detected but below threshold — not applying automatically.[/yellow]")
+        console.print("\n[yellow]⚠ Improvement detected but below threshold — not applying automatically.[/yellow]")
 
 
 @app.callback(invoke_without_command=True)

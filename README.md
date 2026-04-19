@@ -1,30 +1,37 @@
 # zer0lint
 
-**AI memory extraction diagnostics.** Your agent seems forgetful — zer0lint finds the root cause and fixes it in one command.
+Your memory stack can look healthy while the extraction step silently drops the facts your agent needed to remember.
 
-[![PyPI version](https://img.shields.io/pypi/v/zer0lint)](https://pypi.org/project/zer0lint/)
-[![Python 3.9+](https://img.shields.io/pypi/pyversions/zer0lint)](https://pypi.org/project/zer0lint/)
-[![License](https://img.shields.io/badge/license-Apache%202.0-green)](LICENSE)
-[![Made by Hermes Labs](https://img.shields.io/badge/made%20by-Hermes%20Labs-purple)](https://hermes-labs.ai)
+`zer0lint` runs a fail-fast extraction health check, shows whether ingestion is actually working, and generates a better extraction prompt when it is not.
 
----
-
-## Is this you?
-
-- You set up mem0 and your AI agent still forgets things it should remember
-- `add()` returns success, `search()` returns results, but the agent can't recall specific facts
-- You ran a retrieval benchmark — numbers look fine — but the agent still seems broken
-- You switched LLM models and memory got worse, not better
-- You have no idea if your extraction pipeline is actually working
-
-**If any of these match: your extraction is probably broken and completely silent.** zer0lint diagnoses it in under a minute.
+- "mem0 says add worked, but the agent still forgets the important part."
+- "Search returns something, but not the specific fact I stored."
+- "We switched models and memory quality got worse for no obvious reason."
+- "Our retrieval benchmark looks fine, but the batch behavior is still wrong."
+- "I need to know if extraction is broken before I waste time tuning retrieval."
 
 ```bash
 pip install zer0lint
+```
+
+```bash
 zer0lint check --config ~/.mem0/config.json
 ```
 
----
+```text
+Score  : 0/5 (0%) — CRITICAL
+Run zer0lint generate to diagnose and fix.
+```
+
+**When To Use It**
+
+Use `zer0lint` when your memory system ingests text through an LLM extraction step and you need to verify whether facts survive that step.
+
+**When Not To Use It**
+
+Do not use `zer0lint` for vector-store outages, API connectivity failures, or as proof that one prompt fix will generalize to every memory pipeline.
+
+![zer0lint preview](assets/preview.png)
 
 ## The Problem
 
@@ -245,17 +252,6 @@ pip install -e .
 ```
 
 **Requirements:** Python 3.9+. For mem0 config mode: `pip install zer0lint[mem0]`. For HTTP mode: no extra dependencies.
-
----
-
-## Built by Hermes Labs
-
-zer0lint is part of the [Hermes Labs](https://hermes-labs.ai) AI agent tooling suite:
-
-- **[lintlang](https://github.com/roli-lpci/lintlang)** — Static linter for AI agent tool descriptions and prompts
-- **[Little Canary](https://github.com/roli-lpci/little-canary)** — Prompt injection detection
-- **[Suy Sideguy](https://github.com/roli-lpci/suy-sideguy)** — Runtime policy enforcement for agents
-- **zer0lint** — Memory extraction diagnostics ← you are here
 
 ---
 
