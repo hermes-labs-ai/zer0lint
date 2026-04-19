@@ -3,18 +3,15 @@
 from __future__ import annotations
 
 import json
-import time
 from pathlib import Path
 from typing import Optional
 
 from zer0lint.fixer import apply_prompt, detect_extraction_model
 from zer0lint.tester import (
+    cleanup_test_memories,
     generate_test_facts_for_categories,
     validate_extraction_prompt,
-    cleanup_test_memories,
-    count_stored_memories,
 )
-
 
 # mem0's built-in default (personal assistant focused)
 MEM0_DEFAULT_PROMPT = """You are a Personal Information Organizer. Extract facts from conversations.
@@ -295,7 +292,7 @@ def run_generate(
                     print(f"\n[3/3] Prompt saved to {p}")
             else:
                 if verbose:
-                    print(f"\n[3/3] Use --save-prompt <file> to save the prompt, then add it to your memory system's extraction config.")
+                    print("\n[3/3] Use --save-prompt <file> to save the prompt, then add it to your memory system's extraction config.")
         elif config_path:
             if verbose:
                 print(f"\n[3/3] Applying fix to config ({initial_pct:.0f}% → {improved_pct:.0f}%)...")
@@ -306,15 +303,15 @@ def run_generate(
                 print(f"  ✅ Config updated. Backup at: {apply_result.get('backup_path')}")
         else:
             if verbose:
-                print(f"\n[3/3] Would apply fix but no --config path given (dry run).")
+                print("\n[3/3] Would apply fix but no --config path given (dry run).")
     elif improvement_pp <= 0:
         result["verdict"] = "no_improvement"
         if verbose:
-            print(f"\n⚠ Prompt did not improve score — not applying.")
+            print("\n⚠ Prompt did not improve score — not applying.")
     else:
         result["verdict"] = "below_threshold"
         if verbose:
-            print(f"\n⚠ Score improved but still below threshold — not applying.")
+            print("\n⚠ Score improved but still below threshold — not applying.")
 
     result["success"] = True
     return result

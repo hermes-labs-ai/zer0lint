@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from typing import Optional
-
 
 def analyze_with_llm(llm: object, environment_summary: str) -> str:
     """

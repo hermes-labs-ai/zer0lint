@@ -6,7 +6,6 @@ import json
 import shutil
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
 
 
 def backup_config(config_path: str | Path) -> str:
