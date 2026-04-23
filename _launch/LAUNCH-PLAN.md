@@ -11,7 +11,7 @@
   - Priority 4: Replace prose em-dashes in README body
 - [ ] Run `bash _launch/gh-metadata.sh` to set GitHub topics, description, homepage
 - [ ] Upload `_launch/images/social-1200x630.jpg` as the GitHub social preview
-  - Go to: github.com/roli-lpci/zer0lint/settings -> Social preview -> Upload image
+  - Go to: github.com/hermes-labs-ai/zer0lint/settings -> Social preview -> Upload image
   - This cannot be automated - must be done via GitHub web UI
 - [ ] Review `_launch/images/hero.jpg` - if approved, run:
   ```bash

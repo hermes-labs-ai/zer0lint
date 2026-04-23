@@ -134,7 +134,7 @@ zer0lint check --config ~/.mem0/config.json
 zer0lint generate --config ~/.mem0/config.json
 ```
 
-GitHub: https://github.com/roli-lpci/zer0lint
+GitHub: https://github.com/hermes-labs-ai/zer0lint
 PyPI: https://pypi.org/project/zer0lint/
 
 zer0lint is open source (Apache 2.0) and part of the Hermes Labs agent tooling suite.

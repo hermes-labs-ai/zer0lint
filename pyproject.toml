@@ -34,10 +34,10 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/roli-lpci/zer0lint"
-Repository = "https://github.com/roli-lpci/zer0lint"
-Documentation = "https://github.com/roli-lpci/zer0lint#readme"
-Issues = "https://github.com/roli-lpci/zer0lint/issues"
+Homepage = "https://github.com/hermes-labs-ai/zer0lint"
+Repository = "https://github.com/hermes-labs-ai/zer0lint"
+Documentation = "https://github.com/hermes-labs-ai/zer0lint#readme"
+Issues = "https://github.com/hermes-labs-ai/zer0lint/issues"
 
 [project.optional-dependencies]
 mem0 = ["mem0ai>=1.0.0"]

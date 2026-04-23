@@ -2,7 +2,7 @@
 title: "The Silent Failure in mem0: How We Went from 0% to 100% Extraction Recall"
 published: false
 tags: [mem0, ai, python, agents]
-canonical_url: https://github.com/roli-lpci/zer0lint
+canonical_url: https://github.com/hermes-labs-ai/zer0lint
 ---
 
 Your AI agent's memory pipeline is probably lying to you.
@@ -88,6 +88,6 @@ zer0lint check --add-url http://localhost:19420/add --search-url http://localhos
 
 Extraction health and retrieval health are independent. A retrieval benchmark that looks healthy can be built on degraded data. Measure extraction first, before tuning retrieval.
 
-GitHub: https://github.com/roli-lpci/zer0lint
+GitHub: https://github.com/hermes-labs-ai/zer0lint
 PyPI: `pip install zer0lint`
 Apache 2.0. Hermes Labs.

@@ -16,7 +16,7 @@ This is zer0lint - open source, Apache 2.0, pip install zer0lint.
 
 If you're building agent memory pipelines, run `zer0lint check` before you optimize retrieval. If extraction is broken, retrieval tuning doesn't help.
 
-GitHub: https://github.com/roli-lpci/zer0lint
+GitHub: https://github.com/hermes-labs-ai/zer0lint
 
 Hermes Labs | AI agent tooling
 

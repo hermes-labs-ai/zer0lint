@@ -3,7 +3,7 @@
 ## Setup
 
 ```bash
-git clone https://github.com/roli-lpci/zer0lint
+git clone https://github.com/hermes-labs-ai/zer0lint
 cd zer0lint
 pip install -e ".[dev]"
 ```
@@ -52,7 +52,7 @@ tests/
 
 ## Reporting bugs
 
-Open an issue at https://github.com/roli-lpci/zer0lint/issues. Include:
+Open an issue at https://github.com/hermes-labs-ai/zer0lint/issues. Include:
 - zer0lint version (`zer0lint --version`)
 - Python version
 - Operating system

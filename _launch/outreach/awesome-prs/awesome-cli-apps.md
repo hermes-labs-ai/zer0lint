@@ -25,11 +25,11 @@ Adding `zer0lint` - a CLI tool for diagnosing silent extraction failures in AI a
 Under "AI / Machine Learning" or "Development / Testing":
 
 ```markdown
-- [zer0lint](https://github.com/roli-lpci/zer0lint) - Diagnoses silent mem0 extraction failures. Injects synthetic facts, measures round-trip recall, and generates a validated extraction prompt if needed.
+- [zer0lint](https://github.com/hermes-labs-ai/zer0lint) - Diagnoses silent mem0 extraction failures. Injects synthetic facts, measures round-trip recall, and generates a validated extraction prompt if needed.
 ```
 
 **Links:**
-- Repo: https://github.com/roli-lpci/zer0lint
+- Repo: https://github.com/hermes-labs-ai/zer0lint
 - PyPI: https://pypi.org/project/zer0lint/
 - License: Apache 2.0
 

@@ -26,11 +26,11 @@ zer0lint is a Python CLI tool for measuring and fixing AI memory extraction heal
 **Entry to add:**
 
 ```markdown
-- [zer0lint](https://github.com/roli-lpci/zer0lint) - AI memory extraction diagnostics. Tests whether facts added to a mem0 (or any HTTP memory endpoint) survive the LLM extraction step and are retrievable.
+- [zer0lint](https://github.com/hermes-labs-ai/zer0lint) - AI memory extraction diagnostics. Tests whether facts added to a mem0 (or any HTTP memory endpoint) survive the LLM extraction step and are retrievable.
 ```
 
 **Links:**
-- Repo: https://github.com/roli-lpci/zer0lint
+- Repo: https://github.com/hermes-labs-ai/zer0lint
 - PyPI: https://pypi.org/project/zer0lint/
 - License: Apache 2.0
 

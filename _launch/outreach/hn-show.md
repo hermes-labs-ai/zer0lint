@@ -25,7 +25,7 @@ zer0lint automates this: injects 5 typed synthetic facts, measures round-trip re
 generates and validates a fix, and writes it to the correct config field - with a timestamped 
 backup. It also works over HTTP with any memory system, no mem0 dependency needed.
 
-Repo: https://github.com/roli-lpci/zer0lint
+Repo: https://github.com/hermes-labs-ai/zer0lint
 PyPI: pip install zer0lint
 
 If you're using mem0 with a local model and your agent seems forgetful - did you measure 

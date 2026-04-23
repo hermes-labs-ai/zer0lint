@@ -31,4 +31,4 @@ jobs:
         uses: pypa/gh-action-pypi-publish@release/v1
         # No API token needed - uses OIDC Trusted Publishing
         # Configure Trusted Publishing at https://pypi.org/manage/project/zer0lint/settings/publishing/
-        # Publisher: GitHub Actions, repo: roli-lpci/zer0lint, workflow: release.yml
+        # Publisher: GitHub Actions, repo: hermes-labs-ai/zer0lint, workflow: release.yml

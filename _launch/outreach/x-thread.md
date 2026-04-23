@@ -81,5 +81,5 @@ Open source, Apache 2.0, part of the Hermes Labs agent tooling suite.
 
 If you run agent memory on local models - check your extraction score first. Retrieval benchmarks look healthy even when extraction is at 0%.
 
-github.com/roli-lpci/zer0lint
+github.com/hermes-labs-ai/zer0lint
 pypi.org/project/zer0lint/

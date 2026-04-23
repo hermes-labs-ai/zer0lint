@@ -29,6 +29,6 @@ Also works over HTTP with any memory system:
 zer0lint check --add-url http://localhost:19420/add --search-url http://localhost:19420/recall_b
 ```
 
-GitHub: https://github.com/roli-lpci/zer0lint | Apache 2.0
+GitHub: https://github.com/hermes-labs-ai/zer0lint | Apache 2.0
 
 Happy to answer questions about how the extraction prompt works or why `add(..., prompt=X)` is a no-op.

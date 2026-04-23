@@ -34,6 +34,6 @@ zer0lint generate --config ~/.mem0/config.json # fix
 
 Also works via HTTP with cogito-ergo, Zep, or any custom memory endpoint.
 
-GitHub: https://github.com/roli-lpci/zer0lint
+GitHub: https://github.com/hermes-labs-ai/zer0lint
 
 If you're running local models with mem0 - what's your extraction score? Would be curious to see results across different Ollama models.
