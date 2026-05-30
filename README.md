@@ -1,6 +1,6 @@
 # zer0lint
 
-Your memory stack can look healthy while the extraction step silently drops the facts your agent needed to remember.
+zer0lint is a memory-extraction diagnostic that flags silent failure modes in mem0 configs and HTTP memory endpoints — cases where ingestion reports success but the facts your agent needed never survive the LLM extraction step.
 
 `zer0lint` runs a fail-fast extraction health check, shows whether ingestion is actually working, and generates a better extraction prompt when it is not.
 
@@ -35,27 +35,18 @@ Do not use `zer0lint` for vector-store outages, API connectivity failures, or as
 
 ## The Problem
 
-The failure is invisible. `add()` returns `{"results": [...]}`. `search()` returns results. Retrieval benchmarks show 90%+ hit@any. But when the LLM extraction step produces malformed JSON or drops specifics, the facts never land — degraded fallbacks get stored instead. You won't see an error. You'll just notice your agent doesn't remember.
+The failure is invisible. `add()` returns `{"results": [...]}`. `search()` returns results. But when the LLM extraction step produces malformed JSON or drops specifics, the facts never land — degraded fallbacks get stored instead. You won't see an error. You'll just notice your agent doesn't remember.
 
-**Proof from a real run (2026-03-22, mistral:7b, default mem0 config):**
+zer0lint surfaces this by injecting known facts and checking how many survive the round-trip. The illustrative output below shows what a failing extraction step looks like — run it against your own config for real numbers:
 
 ```
-Score  : 0/5 (0%) — CRITICAL
+Score  : 0/5 — CRITICAL
   ⚠  Model upgrade: We switched from gpt-3.5-turbo to gpt-4o-mini...
   ⚠  API endpoint: The API service runs on port 8421 with TLS 1.3...
-  ⚠  CI status: CI pipeline passed on 2026-03-22 at commit a3f8c12...
+  ⚠  CI status: CI pipeline passed at commit a3f8c12...
   ⚠  Configuration: Auth tokens expire after 3600 seconds...
   ⚠  Version update: Updated Redis cluster to v7.2.4...
 ```
-
-**After running `zer0lint generate` (same model, same config, new extraction prompt):**
-
-```
-Score  : 5/5 (100%) — HEALTHY
-  Δ    : +100pp
-```
-
-Same model. One config change. 0%→100%.
 
 ---
 
@@ -130,9 +121,11 @@ Statuses: **HEALTHY** (≥80%) · **ACCEPTABLE** (60–79%) · **DEGRADED** (40�
 2. **Re-test** — apply zer0lint's domain-aware extraction prompt at config level
 3. **Apply** — if improved, write the validated prompt to your config (with backup)
 
+Example run shape (your numbers depend on your model and config):
+
 ```
 [1/3] Baseline — testing current config as-is...
-  Baseline score: 0/5 (0%)
+  Baseline score: <n>/5
     ❌ Configuration
     ❌ API endpoint
     ❌ CI status
@@ -140,22 +133,16 @@ Statuses: **HEALTHY** (≥80%) · **ACCEPTABLE** (60–79%) · **DEGRADED** (40�
     ❌ Version update
 
 [2/3] Re-testing with zer0lint technical extraction prompt (config-level)...
-  Improved score: 5/5 (100%)
-  Improvement: +100pp
+  Improved score: <m>/5
     ✅ Configuration
     ✅ API endpoint
     ✅ CI status
     ✅ Model upgrade
     ✅ Version update
 
-[3/3] Applying fix to config (0% → 100%)...
+[3/3] Applying fix to config (only if the score improved)...
   ✅ Config updated.
-  Backup at: ~/.mem0/config.backup.2026-03-22T02:18:34.json
-
-Results:
-  Before : 0/5 (0%)
-  After  : 5/5 (100%)
-  Δ      : +100pp
+  Backup at: ~/.mem0/config.backup.<timestamp>.json
 ```
 
 ---
@@ -209,25 +196,11 @@ If you're using cogito-ergo, your config lives at `~/.cogito/config.json` — sa
 
 ---
 
-## Test Results (2026-03-22)
+## What zer0lint Checks
 
-Model comparison, 5 technical facts:
+zer0lint injects a fixed set of synthetic technical facts into your memory instance, then measures how many survive the extraction round-trip via recall. It reports a score, a percentage, a health status, and per-fact pass/fail so you can see exactly which facts were dropped.
 
-| Model | Default prompt | zer0lint prompt | Δ |
-|---|---|---|---|
-| qwen3.5:4b | 80% | **100%** | +20pp |
-| mistral:7b | **0%** | **100%** | **+100pp** |
-
-Scale test, 10 facts across 5 domains:
-
-| | Score | % |
-|---|---|---|
-| Default | 7/10 | 70% |
-| zer0lint | 9/10 | **90%** |
-
-**mistral:7b with default mem0 prompt** produces malformed JSON — `Unterminated string`, `Expecting ',' delimiter` — and silently drops facts. zer0lint's extraction prompt fixes this completely on the same model with no other changes.
-
-Improvement varies by model. Smaller models that struggle with structured JSON output see the largest gains.
+Smaller models that struggle to emit well-formed structured JSON are the common failure case: the default extraction prompt can produce malformed output (`Unterminated string`, `Expecting ',' delimiter`) and silently drop facts. `zer0lint generate` proposes a stronger extraction prompt, re-runs the same check, and only writes the new prompt to config if the score improves — so any improvement is validated on your own model and config, not asserted.
 
 ---
 
@@ -276,30 +249,4 @@ Apache 2.0
 
 ## About Hermes Labs
 
-[Hermes Labs](https://hermes-labs.ai) builds AI audit infrastructure for enterprise AI systems — EU AI Act readiness, ISO 42001 evidence bundles, continuous compliance monitoring, agent-level risk testing. We work with teams shipping AI into regulated environments.
-
-**Our OSS philosophy — read this if you're deciding whether to depend on us:**
-
-- **Everything we release is free, forever.** MIT or Apache-2.0. No "open core," no SaaS tier upsell, no paid version with the features you actually need. You can run this repo commercially, without talking to us.
-- **We open-source our own infrastructure.** The tools we release are what Hermes Labs uses internally — we don't publish demo code, we publish production code.
-- **We sell audit work, not licenses.** If you want an ANNEX-IV pack, an ISO 42001 evidence bundle, gap analysis against the EU AI Act, or agent-level red-teaming delivered as a report, that's at [hermes-labs.ai](https://hermes-labs.ai). If you just want the code to run it yourself, it's right here.
-
-**The Hermes Labs OSS audit stack** (public, open-source, no SaaS):
-
-**Static audit** (before deployment)
-- [**lintlang**](https://github.com/hermes-labs-ai/lintlang) — Static linter for AI agent configs, tool descriptions, system prompts. `pip install lintlang`
-- [**rule-audit**](https://github.com/hermes-labs-ai/rule-audit) — Static prompt audit — contradictions, coverage gaps, priority ambiguities
-- [**scaffold-lint**](https://github.com/hermes-labs-ai/scaffold-lint) — Scaffold budget + technique stacking. `pip install scaffold-lint`
-- [**intent-verify**](https://github.com/hermes-labs-ai/intent-verify) — Repo intent verification + spec-drift checks
-
-**Runtime observability** (while the agent runs)
-- [**little-canary**](https://github.com/hermes-labs-ai/little-canary) — Prompt injection detection via sacrificial canary-model probes
-- [**suy-sideguy**](https://github.com/hermes-labs-ai/suy-sideguy) — Runtime policy guard — user-space enforcement + forensic reports
-- [**colony-probe**](https://github.com/hermes-labs-ai/colony-probe) — Prompt confidentiality audit — detects system-prompt reconstruction
-
-**Regression & scoring** (to prove what changed)
-- [**hermes-jailbench**](https://github.com/hermes-labs-ai/hermes-jailbench) — Jailbreak regression benchmark. `pip install hermes-jailbench`
-- [**agent-convergence-scorer**](https://github.com/hermes-labs-ai/agent-convergence-scorer) — Score how similar N agent outputs are. `pip install agent-convergence-scorer`
-
-**Supporting infra**
-- [**claude-router**](https://github.com/hermes-labs-ai/claude-router) · [**zer0dex**](https://github.com/hermes-labs-ai/zer0dex) · [**forgetted**](https://github.com/hermes-labs-ai/forgetted) · [**quick-gate-python**](https://github.com/hermes-labs-ai/quick-gate-python) · [**quick-gate-js**](https://github.com/hermes-labs-ai/quick-gate-js) · [**repo-audit**](https://github.com/hermes-labs-ai/repo-audit)
+Hermes Labs is an independent AI-reliability lab building open-source tools that catch silent failure modes in production AI. More at [hermes-labs.ai](https://hermes-labs.ai).
