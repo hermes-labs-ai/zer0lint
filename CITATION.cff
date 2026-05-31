@@ -1,10 +1,31 @@
 cff-version: 1.2.0
-message: "If you use this software, please cite it as below."
-title: "zer0lint"
+message: "If you use zer0lint, please cite it as below."
+title: "zer0lint: extraction-health diagnostics for mem0 and HTTP memory endpoints"
+abstract: >-
+  zer0lint is a memory-extraction diagnostic that injects synthetic facts into mem0
+  (or any HTTP add/search memory endpoint) and judges whether they survive the LLM
+  extraction step by round-trip recall, then generates and validates a stronger
+  extraction prompt before writing it to config.
+type: software
+version: 0.2.1
 authors:
-  - family-names: Bosch
-    given-names: Rolando
-    email: rbosch@lpci.ai
-    affiliation: Hermes Labs
+  - family-names: "Bosch Rodriguez"
+    given-names: "Rolando"
+    orcid: "https://orcid.org/0009-0005-4896-1112"
+    affiliation: "Hermes Labs"
 license: Apache-2.0
-repository-code: https://github.com/roli-lpci/zer0lint
+repository-code: "https://github.com/hermes-labs-ai/zer0lint"
+keywords:
+  - "AI reliability"
+  - "AI assurance"
+  - "memory extraction"
+  - "mem0"
+  - "agent memory"
+  - "verification by effect"
+references:
+  - type: article
+    title: "A Taxonomy of Epistemic Failure Modes in Large Language Models"
+    authors:
+      - family-names: "Bosch Rodriguez"
+        given-names: "Rolando"
+    doi: "10.5281/zenodo.19042469"

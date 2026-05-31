@@ -1,0 +1,27 @@
+{
+  "upload_type": "software",
+  "title": "zer0lint: extraction-health diagnostics for mem0 and HTTP memory endpoints",
+  "description": "zer0lint is a memory-extraction diagnostic that injects synthetic facts into mem0 (or any HTTP add/search memory endpoint) and judges whether they survive the LLM extraction step by round-trip recall, then generates and validates a stronger extraction prompt before writing it to config.",
+  "creators": [
+    { "name": "Bosch Rodriguez, Rolando", "orcid": "0009-0005-4896-1112", "affiliation": "Hermes Labs" }
+  ],
+  "keywords": [
+    "AI reliability",
+    "AI assurance",
+    "silent failure modes",
+    "verification by effect",
+    "memory extraction",
+    "mem0",
+    "agent memory",
+    "extraction health check"
+  ],
+  "license": "Apache-2.0",
+  "related_identifiers": [
+    {
+      "identifier": "10.5281/zenodo.19042469",
+      "relation": "references",
+      "scheme": "doi",
+      "resource_type": "publication-article"
+    }
+  ]
+}
