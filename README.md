@@ -1,6 +1,13 @@
 # zer0lint
 
+[![CI](https://github.com/hermes-labs-ai/zer0lint/actions/workflows/ci.yml/badge.svg)](https://github.com/hermes-labs-ai/zer0lint/actions/workflows/ci.yml)
+[![PyPI](https://img.shields.io/pypi/v/zer0lint.svg)](https://pypi.org/project/zer0lint/)
+[![Python](https://img.shields.io/pypi/pyversions/zer0lint.svg)](https://pypi.org/project/zer0lint/)
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
+
 zer0lint is a memory-extraction diagnostic that flags silent failure modes in mem0 configs and HTTP memory endpoints — cases where ingestion reports success but the facts your agent needed never survive the LLM extraction step.
+
+> Part of the [Hermes Labs](https://github.com/hermes-labs-ai) reliability stack.
 
 `zer0lint` runs a fail-fast extraction health check, shows whether ingestion is actually working, and generates a better extraction prompt when it is not.
 
@@ -65,7 +72,7 @@ zer0lint generate --config ~/.mem0/config.json
 zer0lint generate --config ~/.mem0/config.json --dry-run
 ```
 
-Your original config is always backed up before any changes are written.
+In mem0 config mode, your original config is backed up (timestamped) before any changes are written.
 
 ### Universal HTTP mode
 
@@ -115,11 +122,11 @@ Statuses: **HEALTHY** (≥80%) · **ACCEPTABLE** (60–79%) · **DEGRADED** (40�
 
 ### `zer0lint generate`
 
-3-phase diagnostic + fix. Validates the prompt works before applying it. Never writes without proof of improvement.
+3-phase diagnostic + fix. Re-tests the prompt on your own config before applying it. It does not write a new prompt unless the re-test scores higher than the baseline.
 
 1. **Baseline** — test your current config as-is
-2. **Re-test** — apply zer0lint's domain-aware extraction prompt at config level
-3. **Apply** — if improved, write the validated prompt to your config (with backup)
+2. **Re-test** — apply zer0lint's built-in technical-domain extraction prompt at config level
+3. **Apply** — if the re-test scores higher, write the validated prompt to your config (with backup)
 
 Example run shape (your numbers depend on your model and config):
 
@@ -147,9 +154,9 @@ Example run shape (your numbers depend on your model and config):
 
 ---
 
-## Critical Discovery: Where Extraction Actually Happens
+## Where Extraction Actually Happens
 
-Most developers who hit this problem try to fix it by passing a custom prompt at call time:
+A common mistake is trying to fix this by passing a custom prompt at call time:
 
 ```python
 memory.add("...", prompt="extract technical facts")  # does nothing
@@ -230,14 +237,32 @@ pip install -e .
 
 ## Supported Systems
 
-zer0lint is architected to work over HTTP with any memory system that exposes add/search endpoints. It should work for most agent memory setups if configured correctly.
+zer0lint works over HTTP with any memory system that exposes add/search endpoints. The HTTP adapter normalizes common response shapes (`results`, `hits`, `memories`, plain lists, and `text`/`content`/`memory` keys), so most agent memory setups work once the two URLs are pointed at the right endpoints.
 
-| System | Status | How |
+| System | Mode | Notes |
 |---|---|---|
-| mem0 v1.x | ✅ | `--config` flag |
-| cogito-ergo | ✅ | `--add-url` + `--search-url` |
-| Agent Gorgon | ✅ | `--add-url` + `--search-url` |
-| Any HTTP memory API | ✅ | `--add-url` + `--search-url` |
+| mem0 v1.x | `--config` flag | Config mode; covered by tests |
+| cogito-ergo | `--add-url` + `--search-url` | Adapter normalizes its `/recall_b` response shape |
+| Any HTTP memory API | `--add-url` + `--search-url` | Works if endpoints follow the add/search contract below |
+
+The HTTP contract the adapter expects is documented in `zer0lint/http_adapter.py`.
+
+---
+
+## Limitations / What It Does Not Do
+
+Grounded in what the code actually does:
+
+- **It is not a semantic-correctness judge.** A fact counts as "recalled" when one of its keywords appears in the recall results (substring match, case-insensitive). It measures survival of identifiable content, not paraphrase quality or factual accuracy.
+- **`generate` applies one built-in technical-domain prompt, not a per-domain generated prompt.** The fix it writes is a fixed prompt tuned for technical/agent-workspace facts. It is not adapted to your specific domain, and it is only written when the re-test scores higher than the baseline on your own model and config.
+- **Synthetic test facts are technical/research-flavored.** `check` and `generate` inject facts from the `technical` and `research` sets. If your workload is medical, legal, or financial, the score reflects those technical facts, not your domain.
+- **HTTP mode does not clean up after itself.** It isolates test data with a per-run random `user_id` rather than deleting it. If your backend ignores `user_id`, test facts may persist in the store.
+- **It does not debug retrieval, embeddings, or vector-store outages.** It checks the extraction step only. A passing extraction score does not mean retrieval ranking, recall@k, or connectivity are healthy.
+- **One improving re-test does not imply generalization.** A higher score on the synthetic set is evidence the prompt helps your model on those facts — it is not a claim that it fixes every model, domain, or pipeline.
+
+## Part of the Hermes Labs Reliability Stack
+
+zer0lint is one of several open-source [Hermes Labs](https://github.com/hermes-labs-ai) tools that catch silent failure modes in production AI. It pairs naturally with memory backends like cogito-ergo (verify extraction health over the same HTTP add/search endpoints) rather than duplicating them — zer0lint diagnoses the extraction step; the memory system stores and retrieves.
 
 ---
 
