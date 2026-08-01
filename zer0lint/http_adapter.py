@@ -53,6 +53,11 @@ class HttpMemoryAdapter:
         # If the backend doesn't support user_id scoping, this is a no-op.
         self._default_user_id = user_id or f"zer0lint_{str(uuid4())[:8]}"
 
+    @property
+    def default_user_id(self) -> str:
+        """Return the isolated user ID this adapter uses for the current run."""
+        return self._default_user_id
+
     # ------------------------------------------------------------------
     # mem0-compatible interface
     # ------------------------------------------------------------------

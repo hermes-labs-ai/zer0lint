@@ -139,7 +139,7 @@ def run_check(
         http_user_id=http_user_id,
         collection_suffix="check",
     )
-    uid = "zer0lint_check"
+    uid = getattr(memory, "default_user_id", "zer0lint_check")
     if not is_http:
         cleanup_test_memories(memory, user_id=uid)
 
@@ -213,9 +213,6 @@ def run_generate(
     }
 
     facts = generate_test_facts_for_categories(["technical", "research"], count=n_facts)
-    uid_baseline = "zer0lint_baseline"
-    uid_improved = "zer0lint_improved"
-
     # --- Phase 1: Baseline ---
     if verbose:
         print("\n[1/3] Baseline — testing current config as-is...")
@@ -226,6 +223,7 @@ def run_generate(
         http_timeout=http_timeout, http_user_id=http_user_id,
         collection_suffix="baseline",
     )
+    uid_baseline = getattr(mem_baseline, "default_user_id", "zer0lint_baseline")
     if not is_http:
         cleanup_test_memories(mem_baseline, user_id=uid_baseline)
     res_baseline = validate_extraction_prompt(mem_baseline, facts, "", user_id=uid_baseline, wait_seconds=wait_seconds)
@@ -260,6 +258,7 @@ def run_generate(
         custom_prompt=TECHNICAL_EXTRACTION_PROMPT,
         collection_suffix="improved",
     )
+    uid_improved = getattr(mem_improved, "default_user_id", "zer0lint_improved")
     if not is_http:
         cleanup_test_memories(mem_improved, user_id=uid_improved)
     res_improved = validate_extraction_prompt(mem_improved, facts, "", user_id=uid_improved, wait_seconds=wait_seconds)
