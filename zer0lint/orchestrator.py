@@ -223,7 +223,11 @@ def run_generate(
         http_timeout=http_timeout, http_user_id=http_user_id,
         collection_suffix="baseline",
     )
-    uid_baseline = getattr(mem_baseline, "default_user_id", "zer0lint_baseline")
+    uid_baseline = (
+        f"{http_user_id}_baseline"
+        if is_http and http_user_id
+        else getattr(mem_baseline, "default_user_id", "zer0lint_baseline")
+    )
     if not is_http:
         cleanup_test_memories(mem_baseline, user_id=uid_baseline)
     res_baseline = validate_extraction_prompt(mem_baseline, facts, "", user_id=uid_baseline, wait_seconds=wait_seconds)
@@ -258,7 +262,11 @@ def run_generate(
         custom_prompt=TECHNICAL_EXTRACTION_PROMPT,
         collection_suffix="improved",
     )
-    uid_improved = getattr(mem_improved, "default_user_id", "zer0lint_improved")
+    uid_improved = (
+        f"{http_user_id}_improved"
+        if is_http and http_user_id
+        else getattr(mem_improved, "default_user_id", "zer0lint_improved")
+    )
     if not is_http:
         cleanup_test_memories(mem_improved, user_id=uid_improved)
     res_improved = validate_extraction_prompt(mem_improved, facts, "", user_id=uid_improved, wait_seconds=wait_seconds)
