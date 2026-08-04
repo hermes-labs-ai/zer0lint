@@ -54,7 +54,11 @@ def check(
     add_url: Optional[str] = typer.Option(None, "--add-url", help="HTTP endpoint for storing facts (e.g. http://localhost:19420/add)"),
     search_url: Optional[str] = typer.Option(None, "--search-url", help="HTTP endpoint for searching memories (e.g. http://localhost:19420/recall_b)"),
     http_wait: float = typer.Option(1.5, "--http-wait", help="Seconds to wait after add() before searching (increase for slow backends)"),
-    user_id: Optional[str] = typer.Option(None, "--user-id", help="Override test user_id for isolation (HTTP mode)"),
+    user_id: Optional[str] = typer.Option(
+        None,
+        "--user-id",
+        help="Base test user_id; generate appends phase suffixes (HTTP mode)",
+    ),
     verbose: bool = typer.Option(False, "--verbose", "-v"),
     n: int = typer.Option(5, "--facts", "-n", help="Number of test facts"),
 ) -> None:
