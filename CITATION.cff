@@ -7,7 +7,7 @@ abstract: >-
   extraction step by round-trip recall, then generates and validates a stronger
   extraction prompt before writing it to config.
 type: software
-version: 0.2.1
+version: 0.2.3
 authors:
   - family-names: "Bosch Rodriguez"
     given-names: "Rolando"
