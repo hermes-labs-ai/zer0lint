@@ -18,7 +18,8 @@ zer0lint is a memory-extraction diagnostic that flags silent failure modes in me
 - "I need to know if extraction is broken before I waste time tuning retrieval."
 
 ```bash
-pip install zer0lint
+# For mem0 config mode (includes the mem0 dependency)
+pip install "zer0lint[mem0]"
 ```
 
 ```bash
@@ -60,7 +61,8 @@ Score  : 0/5 — CRITICAL
 ## Quick Start
 
 ```bash
-pip install zer0lint
+# For mem0 config mode (includes the mem0 dependency)
+pip install "zer0lint[mem0]"
 
 # Step 1: diagnose
 zer0lint check --config ~/.mem0/config.json
@@ -222,8 +224,11 @@ It injects known facts, measures how many survive the extraction round-trip, gen
 ## Installation
 
 ```bash
-# From PyPI (recommended)
+# HTTP mode (no extra dependencies)
 pip install zer0lint
+
+# mem0 config mode
+pip install "zer0lint[mem0]"
 
 # From source
 git clone https://github.com/hermes-labs-ai/zer0lint
