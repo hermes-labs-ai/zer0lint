@@ -88,7 +88,7 @@ zer0lint check --add-url http://localhost:19420/add --search-url http://localhos
 zer0lint generate --add-url http://localhost:19420/add --search-url http://localhost:19420/recall_b --save-prompt prompt.txt
 ```
 
-Works with cogito-ergo, Zep, LangMem, or any custom HTTP memory API.
+Works with fidelis, Zep, LangMem, or any custom HTTP memory API.
 
 ---
 
@@ -201,7 +201,7 @@ After `zer0lint generate`, it adds:
 }
 ```
 
-If you're using cogito-ergo, your config lives at `~/.cogito/config.json` — same format. Or skip the config entirely and use HTTP mode with cogito-ergo's endpoints.
+If you're using fidelis, your config lives at `~/.cogito/config.json` — same format. Or skip the config entirely and use HTTP mode with fidelis's endpoints.
 
 ---
 
@@ -247,7 +247,7 @@ zer0lint works over HTTP with any memory system that exposes add/search endpoint
 | System | Mode | Notes |
 |---|---|---|
 | mem0 v1.x | `--config` flag | Config mode; covered by tests |
-| cogito-ergo | `--add-url` + `--search-url` | Adapter normalizes its `/recall_b` response shape |
+| fidelis | `--add-url` + `--search-url` | Adapter normalizes its `/recall_b` response shape |
 | Any HTTP memory API | `--add-url` + `--search-url` | Works if endpoints follow the add/search contract below |
 
 The HTTP contract the adapter expects is documented in `zer0lint/http_adapter.py`.
@@ -267,7 +267,7 @@ Grounded in what the code actually does:
 
 ## Part of the Hermes Labs Reliability Stack
 
-zer0lint is one of several open-source [Hermes Labs](https://github.com/hermes-labs-ai) tools that catch silent failure modes in production AI. It pairs naturally with memory backends like cogito-ergo (verify extraction health over the same HTTP add/search endpoints) rather than duplicating them — zer0lint diagnoses the extraction step; the memory system stores and retrieves.
+zer0lint is one of several open-source [Hermes Labs](https://github.com/hermes-labs-ai) tools that catch silent failure modes in production AI. It pairs naturally with memory backends like [fidelis](https://github.com/hermes-labs-ai/fidelis) (verify extraction health over the same HTTP add/search endpoints) rather than duplicating them — zer0lint diagnoses the extraction step; the memory system stores and retrieves.
 
 ---
 
