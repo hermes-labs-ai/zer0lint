@@ -10,7 +10,7 @@ import typer
 from rich.console import Console
 
 from zer0lint import __version__
-from zer0lint.fixer import detect_extraction_model
+from zer0lint.fixer import configured_extraction_prompt, detect_extraction_model
 from zer0lint.orchestrator import run_check, run_generate
 
 console = Console()
@@ -93,7 +93,7 @@ def check(
     else:
         config_dict, resolved = _load_config(config_path)
         model = detect_extraction_model(config_dict)
-        has_custom = bool(config_dict.get("custom_fact_extraction_prompt"))
+        has_custom = bool(configured_extraction_prompt(config_dict))
         console.print(f"Config : {resolved}")
         console.print(f"Model  : {model}")
         console.print(f"Prompt : {'custom' if has_custom else 'default (mem0 built-in)'}\n")
@@ -174,7 +174,7 @@ def generate(
     else:
         config_dict, resolved = _load_config(config_path)
         model = detect_extraction_model(config_dict)
-        has_custom = bool(config_dict.get("custom_fact_extraction_prompt"))
+        has_custom = bool(configured_extraction_prompt(config_dict))
         console.print(f"Config : {resolved}")
         console.print(f"Model  : {model}")
         console.print(f"Prompt : {'custom' if has_custom else 'default (mem0 built-in)'}")

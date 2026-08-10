@@ -5,6 +5,8 @@ from __future__ import annotations
 import subprocess
 from pathlib import Path
 
+from zer0lint.fixer import configured_extraction_prompt
+
 
 def scan_environment(root: Path | None = None) -> dict:
     """
@@ -111,7 +113,7 @@ def scan_environment(root: Path | None = None) -> dict:
         try:
             import json
             config = json.loads(mem0_config.read_text())
-            current_prompt = config.get("custom_fact_extraction_prompt")
+            current_prompt = configured_extraction_prompt(config)
         except Exception:
             pass
 

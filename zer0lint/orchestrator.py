@@ -6,7 +6,13 @@ import json
 from pathlib import Path
 from typing import Optional
 
-from zer0lint.fixer import apply_prompt, detect_extraction_model
+from zer0lint.fixer import (
+    CURRENT_EXTRACTION_PROMPT_FIELD,
+    LEGACY_EXTRACTION_PROMPT_FIELD,
+    apply_prompt,
+    detect_extraction_model,
+    resolve_extraction_prompt_field,
+)
 from zer0lint.tester import (
     cleanup_test_memories,
     generate_test_facts_for_categories,
@@ -73,11 +79,12 @@ def _make_memory(base_config: dict, custom_prompt: Optional[str] = None, collect
         orig_name = config["vector_store"]["config"].get("collection_name", "mem0")
         config["vector_store"]["config"]["collection_name"] = f"{orig_name}_{collection_suffix}"
 
-    # Config-level prompt injection (the correct way in mem0 v1.x)
-    if custom_prompt:
-        config["custom_fact_extraction_prompt"] = custom_prompt
-    elif "custom_fact_extraction_prompt" in config:
-        del config["custom_fact_extraction_prompt"]
+    # Preserve the configured baseline. Replace it only for an explicit override.
+    if custom_prompt is not None:
+        config.pop(CURRENT_EXTRACTION_PROMPT_FIELD, None)
+        config.pop(LEGACY_EXTRACTION_PROMPT_FIELD, None)
+        if custom_prompt:
+            config[resolve_extraction_prompt_field()] = custom_prompt
 
     return Memory.from_config(config)
 

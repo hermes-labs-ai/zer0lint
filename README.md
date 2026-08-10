@@ -164,7 +164,7 @@ A common mistake is trying to fix this by passing a custom prompt at call time:
 memory.add("...", prompt="extract technical facts")  # does nothing
 ```
 
-**This has no effect in mem0 v1.x.** The extraction prompt must live in the config — specifically in the `custom_fact_extraction_prompt` field. There is no error when you pass it to `add()`. It simply has zero effect on what gets extracted.
+**This has no effect in Mem0 when passed to `add()`.** Extraction instructions must live in the config. Current Mem0 uses `custom_instructions`; older supported Mem0 schemas used `custom_fact_extraction_prompt`. zer0lint detects the installed schema and writes the supported field. There is no error when an unsupported per-call prompt is ignored.
 
 zer0lint writes the validated prompt to the correct location. That's the fix.
 
@@ -197,9 +197,11 @@ After `zer0lint generate`, it adds:
 
 ```json
 {
-  "custom_fact_extraction_prompt": "You are a Technical Memory Organizer..."
+  "custom_instructions": "You are a Technical Memory Organizer..."
 }
 ```
+
+On an older installed Mem0 schema, zer0lint preserves compatibility by writing the legacy `custom_fact_extraction_prompt` field instead.
 
 If you're using fidelis, your config lives at `~/.cogito/config.json` — same format. Or skip the config entirely and use HTTP mode with fidelis's endpoints.
 
