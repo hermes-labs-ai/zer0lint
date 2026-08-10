@@ -39,3 +39,7 @@ pytest -q
 - users debug retrieval before confirming extraction health
 - `--config` is mixed with `--add-url` or `--search-url`
 - a team expects `memory.add(..., prompt=...)` to override extraction behavior in mem0
+
+Current Mem0 stores extraction guidance in `custom_instructions`. Older supported
+schemas used `custom_fact_extraction_prompt`; zer0lint detects the installed schema
+and writes only the field it accepts.

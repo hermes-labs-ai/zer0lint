@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pytest
 
+from zer0lint import fixer
 from zer0lint.fixer import (
     apply_prompt,
     backup_config,
@@ -26,8 +27,12 @@ def test_backup_config():
         assert "backup" in backup_path
 
 
-def test_apply_prompt_new():
+def test_apply_prompt_new(monkeypatch):
     """Test applying a new prompt to config."""
+    monkeypatch.setattr(
+        "zer0lint.fixer.resolve_extraction_prompt_field",
+        lambda: "custom_instructions",
+    )
     with tempfile.TemporaryDirectory() as tmpdir:
         config_path = Path(tmpdir) / "config.json"
         config = {
@@ -43,7 +48,9 @@ def test_apply_prompt_new():
 
         # Verify new prompt was written
         updated = json.loads(config_path.read_text())
-        assert updated["custom_fact_extraction_prompt"] == "new prompt"
+        assert updated["custom_instructions"] == "new prompt"
+        assert "custom_fact_extraction_prompt" not in updated
+        assert result["changes"]["field"] == "custom_instructions"
 
 
 def test_apply_prompt_no_backup():
@@ -56,6 +63,62 @@ def test_apply_prompt_no_backup():
 
         assert result["success"] is True
         assert result["backup_path"] is None
+
+
+def test_apply_prompt_uses_legacy_field_for_legacy_mem0_schema(monkeypatch):
+    """Catch writes to the current field when an installed legacy schema needs the old field."""
+    monkeypatch.setattr(
+        "zer0lint.fixer.resolve_extraction_prompt_field",
+        lambda: "custom_fact_extraction_prompt",
+    )
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        config_path = Path(tmpdir) / "config.json"
+        config_path.write_text('{"custom_instructions": "newer prompt"}')
+
+        result = apply_prompt(config_path, "legacy-compatible", backup=False)
+
+        updated = json.loads(config_path.read_text())
+        assert updated == {"custom_fact_extraction_prompt": "legacy-compatible"}
+        assert result["changes"]["field"] == "custom_fact_extraction_prompt"
+
+
+def test_resolve_extraction_prompt_field_prefers_current_mem0_schema():
+    """Catch regressions that select the removed field on current Mem0."""
+
+    class CurrentMemoryConfig:
+        model_fields = {"custom_instructions": object()}
+
+    assert fixer.resolve_extraction_prompt_field(CurrentMemoryConfig) == "custom_instructions"
+
+
+def test_resolve_extraction_prompt_field_supports_legacy_mem0_schema():
+    """Catch regressions that break explicitly supported older Mem0 schemas."""
+
+    class LegacyMemoryConfig:
+        __fields__ = {"custom_fact_extraction_prompt": object()}
+
+    assert (
+        fixer.resolve_extraction_prompt_field(LegacyMemoryConfig)
+        == "custom_fact_extraction_prompt"
+    )
+
+
+def test_configured_extraction_prompt_reads_current_then_legacy():
+    assert fixer.configured_extraction_prompt({"custom_instructions": "current"}) == "current"
+    assert (
+        fixer.configured_extraction_prompt(
+            {
+                "custom_instructions": "",
+                "custom_fact_extraction_prompt": "stale legacy",
+            }
+        )
+        == ""
+    )
+    assert (
+        fixer.configured_extraction_prompt({"custom_fact_extraction_prompt": "legacy"})
+        == "legacy"
+    )
 
 
 def test_apply_prompt_file_not_found():

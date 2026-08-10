@@ -7,6 +7,36 @@ import shutil
 from datetime import datetime
 from pathlib import Path
 
+CURRENT_EXTRACTION_PROMPT_FIELD = "custom_instructions"
+LEGACY_EXTRACTION_PROMPT_FIELD = "custom_fact_extraction_prompt"
+
+
+def resolve_extraction_prompt_field(memory_config_cls: type | None = None) -> str:
+    """Return the extraction-instruction field supported by installed Mem0."""
+    if memory_config_cls is None:
+        try:
+            from mem0.configs.base import MemoryConfig
+        except ImportError:
+            return CURRENT_EXTRACTION_PROMPT_FIELD
+        memory_config_cls = MemoryConfig
+
+    fields = getattr(memory_config_cls, "model_fields", None)
+    if fields is None:
+        fields = getattr(memory_config_cls, "__fields__", {})
+
+    if CURRENT_EXTRACTION_PROMPT_FIELD in fields:
+        return CURRENT_EXTRACTION_PROMPT_FIELD
+    if LEGACY_EXTRACTION_PROMPT_FIELD in fields:
+        return LEGACY_EXTRACTION_PROMPT_FIELD
+    return CURRENT_EXTRACTION_PROMPT_FIELD
+
+
+def configured_extraction_prompt(config: dict) -> object | None:
+    """Read either current or legacy extraction instructions from a config."""
+    if CURRENT_EXTRACTION_PROMPT_FIELD in config:
+        return config[CURRENT_EXTRACTION_PROMPT_FIELD]
+    return config.get(LEGACY_EXTRACTION_PROMPT_FIELD)
+
 
 def backup_config(config_path: str | Path) -> str:
     """
@@ -52,11 +82,19 @@ def apply_prompt(
     if backup:
         backup_path = backup_config(config_path)
 
-    # Record the old prompt for comparison
-    old_prompt = config.get("custom_fact_extraction_prompt", "(none)")
+    # Select the field supported by the installed Mem0 schema and migrate away
+    # from the other spelling so strict config validation sees only one key.
+    field = resolve_extraction_prompt_field()
+    other_field = (
+        LEGACY_EXTRACTION_PROMPT_FIELD
+        if field == CURRENT_EXTRACTION_PROMPT_FIELD
+        else CURRENT_EXTRACTION_PROMPT_FIELD
+    )
+    old_prompt = configured_extraction_prompt(config) or "(none)"
 
     # Apply new prompt
-    config["custom_fact_extraction_prompt"] = new_prompt
+    config.pop(other_field, None)
+    config[field] = new_prompt
 
     # Write back
     with open(config_path, "w") as f:
@@ -67,7 +105,7 @@ def apply_prompt(
         "config_path": str(config_path),
         "backup_path": backup_path,
         "changes": {
-            "field": "custom_fact_extraction_prompt",
+            "field": field,
             "old_length": len(old_prompt),
             "new_length": len(new_prompt),
         },

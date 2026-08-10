@@ -23,7 +23,7 @@ Here is a description of the system environment you're designing a prompt for:
 {environment_summary}
 ---
 
-Based on this environment, write a mem0 custom_fact_extraction_prompt that will capture
+Based on this environment, write Mem0 custom instructions that will capture
 the most important facts this system needs to remember.
 
 The prompt should:

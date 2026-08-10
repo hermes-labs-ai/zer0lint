@@ -1,5 +1,6 @@
 """Tests for backend isolation in the zer0lint orchestration flows."""
 
+import sys
 from types import SimpleNamespace
 
 from zer0lint import orchestrator
@@ -12,6 +13,49 @@ def _result(score: int, total: int = 1) -> dict:
         "details": [],
         "failures": [],
     }
+
+
+def test_make_memory_uses_current_mem0_custom_instructions(monkeypatch):
+    """Catch injecting the removed custom_fact_extraction_prompt into current Mem0."""
+    seen = {}
+
+    class FakeMemory:
+        @classmethod
+        def from_config(cls, config):
+            seen.update(config)
+            return cls()
+
+    monkeypatch.setitem(sys.modules, "mem0", SimpleNamespace(Memory=FakeMemory))
+    monkeypatch.setattr(
+        orchestrator,
+        "resolve_extraction_prompt_field",
+        lambda: "custom_instructions",
+    )
+
+    orchestrator._make_memory(
+        {"custom_fact_extraction_prompt": "stale"},
+        custom_prompt="current prompt",
+    )
+
+    assert seen["custom_instructions"] == "current prompt"
+    assert "custom_fact_extraction_prompt" not in seen
+
+
+def test_make_memory_preserves_configured_prompt_for_baseline(monkeypatch):
+    """Baseline checks must measure the user's current extraction configuration."""
+    seen = {}
+
+    class FakeMemory:
+        @classmethod
+        def from_config(cls, config):
+            seen.update(config)
+            return cls()
+
+    monkeypatch.setitem(sys.modules, "mem0", SimpleNamespace(Memory=FakeMemory))
+
+    orchestrator._make_memory({"custom_instructions": "configured baseline"})
+
+    assert seen["custom_instructions"] == "configured baseline"
 
 
 def test_run_check_uses_http_adapters_isolated_user_id(monkeypatch):
