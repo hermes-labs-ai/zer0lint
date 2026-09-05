@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "zer0lint"
-version = "0.2.4"
+version = "0.3.0"
 description = "Memory extraction diagnostics for mem0 configs and HTTP memory endpoints."
 readme = "README.md"
 license = {text = "Apache-2.0"}

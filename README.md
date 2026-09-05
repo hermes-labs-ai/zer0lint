@@ -223,6 +223,42 @@ It injects known facts, measures how many survive the extraction round-trip, gen
 
 ---
 
+## Side Effects & Recovery
+
+zer0lint writes to your real backend to run its check. Here's exactly what happens and how to undo it.
+
+**What gets written**
+
+- **mem0 mode:** synthetic test facts are added under a suffixed collection name (`<your_collection>_check`, `_baseline`, `_improved`) and an isolated `user_id`, not your production namespace.
+- **HTTP mode:** synthetic test facts are added under a per-run random `user_id` (e.g. `zer0lint_a1b2c3d4`) via your configured add endpoint. There is no collection suffixing — isolation depends entirely on your backend actually scoping by `user_id`.
+- **Config writes:** `zer0lint generate` only writes to `--config` when the re-tested prompt scores higher than baseline, and always creates a timestamped backup first (`config.backup.<ISO timestamp>`).
+
+**Cleanup — and how you know it happened**
+
+After each phase, zer0lint attempts to delete the test facts it just wrote and returns a machine-readable receipt:
+
+```json
+{"mode": "delete", "user_id": "zer0lint_check", "attempted": 5, "deleted": 5, "failed": 0, "errors": []}
+```
+
+- `attempted` — test memories found for that isolated `user_id`
+- `deleted` — how many were actually removed
+- `failed` / `errors` — anything that didn't clean up, with the reason
+
+`zer0lint check -v` and `zer0lint generate` print this receipt for every phase; `run_check()`/`run_generate()` also return it under `result["cleanup"]`, so you can assert on it in your own scripts instead of trusting a log line.
+
+**HTTP mode does not delete.** The generic HTTP adapter only implements the documented add/search contract — it has no way to know your backend's delete endpoint. Isolation there relies entirely on the per-run random `user_id`; the receipt reports `"mode": "isolated_no_delete"` so this is explicit rather than a silent gap. If your backend doesn't scope reads by `user_id`, test facts persist — check your backend's data for the printed `user_id` if you need to remove them manually.
+
+**Recovery**
+
+- Config changes: restore from the printed `backup_path` (`cp <backup_path> <original_config_path>`).
+- Leftover mem0 test data (`failed` > 0 in a receipt, or an interrupted run): delete the collection named in the receipt's context (`<collection>_check` / `_baseline` / `_improved`), or call `memory.delete_all(user_id=<receipt user_id>)` directly against your mem0 instance.
+- Leftover HTTP-mode test data: search your backend for the `user_id` zer0lint printed and remove those entries through your backend's own tooling.
+
+zer0lint never contacts a real memory store outside of the one you explicitly point it at with `--config`, `--add-url`, or `--search-url`.
+
+---
+
 ## Installation
 
 ```bash
@@ -263,7 +299,7 @@ Grounded in what the code actually does:
 - **It is not a semantic-correctness judge.** A fact counts as "recalled" when one of its keywords appears in the recall results (substring match, case-insensitive). It measures survival of identifiable content, not paraphrase quality or factual accuracy.
 - **`generate` applies one built-in technical-domain prompt, not a per-domain generated prompt.** The fix it writes is a fixed prompt tuned for technical/agent-workspace facts. It is not adapted to your specific domain, and it is only written when the re-test scores higher than the baseline on your own model and config.
 - **Synthetic test facts are technical/research-flavored.** `check` and `generate` inject facts from the `technical` and `research` sets. If your workload is medical, legal, or financial, the score reflects those technical facts, not your domain.
-- **HTTP mode does not clean up after itself.** It isolates test data with a per-run random `user_id` rather than deleting it. If your backend ignores `user_id`, test facts may persist in the store.
+- **HTTP mode does not clean up after itself.** It isolates test data with a per-run random `user_id` rather than deleting it. If your backend ignores `user_id`, test facts may persist in the store. mem0 mode does delete its test facts after each phase and reports a pass/fail receipt — see [Side Effects & Recovery](#side-effects--recovery).
 - **It does not debug retrieval, embeddings, or vector-store outages.** It checks the extraction step only. A passing extraction score does not mean retrieval ranking, recall@k, or connectivity are healthy.
 - **One improving re-test does not imply generalization.** A higher score on the synthetic set is evidence the prompt helps your model on those facts — it is not a claim that it fixes every model, domain, or pipeline.
 

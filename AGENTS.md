@@ -43,3 +43,8 @@ pytest -q
 Current Mem0 stores extraction guidance in `custom_instructions`. Older supported
 schemas used `custom_fact_extraction_prompt`; zer0lint detects the installed schema
 and writes only the field it accepts.
+
+`check` and `generate` clean up the test facts they write after each phase (mem0
+mode deletes them; HTTP mode isolates by user_id only) and return the outcome as
+a machine-readable `cleanup` receipt (`attempted`/`deleted`/`failed`/`errors`) —
+see README "Side Effects & Recovery" for the full contract.
