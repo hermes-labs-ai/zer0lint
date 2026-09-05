@@ -104,6 +104,26 @@ def test_resolve_extraction_prompt_field_supports_legacy_mem0_schema():
     )
 
 
+def test_resolve_extraction_prompt_field_matches_installed_mem0():
+    """Catch drift between the installed Mem0 schema and zer0lint's field detection.
+
+    Uses the real mem0.configs.base.MemoryConfig (not a fake stand-in) so an
+    upstream Mem0 release that renames or removes the extraction-prompt field
+    fails this test instead of silently writing an unsupported config key.
+    """
+    mem0_config = pytest.importorskip("mem0.configs.base")
+    field = fixer.resolve_extraction_prompt_field(mem0_config.MemoryConfig)
+
+    installed_fields = getattr(mem0_config.MemoryConfig, "model_fields", None) or getattr(
+        mem0_config.MemoryConfig, "__fields__", {}
+    )
+    assert field in (
+        fixer.CURRENT_EXTRACTION_PROMPT_FIELD,
+        fixer.LEGACY_EXTRACTION_PROMPT_FIELD,
+    )
+    assert field in installed_fields
+
+
 def test_configured_extraction_prompt_reads_current_then_legacy():
     assert fixer.configured_extraction_prompt({"custom_instructions": "current"}) == "current"
     assert (

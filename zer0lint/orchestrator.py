@@ -16,6 +16,7 @@ from zer0lint.fixer import (
 from zer0lint.tester import (
     cleanup_test_memories,
     generate_test_facts_for_categories,
+    isolation_only_receipt,
     validate_extraction_prompt,
 )
 
@@ -148,10 +149,19 @@ def run_check(
     )
     uid = getattr(memory, "default_user_id", "zer0lint_check")
     if not is_http:
+        # Clear any leftover test data from a prior interrupted run before writing new facts.
         cleanup_test_memories(memory, user_id=uid)
 
     facts = generate_test_facts_for_categories(["technical", "research"], count=n_facts)
     results = validate_extraction_prompt(memory, facts, "", user_id=uid, wait_seconds=wait_seconds)
+
+    if is_http:
+        cleanup = isolation_only_receipt(
+            uid, "HTTP backends are not guaranteed to expose delete; isolation relies on a "
+            "per-run user_id instead of removing stored facts."
+        )
+    else:
+        cleanup = cleanup_test_memories(memory, user_id=uid)
 
     score = results["score"]
     total = results["total"]
@@ -171,6 +181,7 @@ def run_check(
         for d in results["details"]:
             icon = "✅" if d["found"] else ("⚠ " if d.get("stored") else "❌")
             print(f"  {icon} {d['label']}: {d['text'][:55]}...")
+        print(f"[CHECK] Cleanup: {cleanup}")
 
     return {
         "score": score,
@@ -179,6 +190,7 @@ def run_check(
         "status": status,
         "details": results["details"],
         "failures": results["failures"],
+        "cleanup": cleanup,
     }
 
 
@@ -217,6 +229,7 @@ def run_generate(
         "backup_path": None,
         "saved_prompt_path": None,
         "verdict": None,
+        "cleanup": {},
     }
 
     facts = generate_test_facts_for_categories(["technical", "research"], count=n_facts)
@@ -237,7 +250,17 @@ def run_generate(
     )
     if not is_http:
         cleanup_test_memories(mem_baseline, user_id=uid_baseline)
-    res_baseline = validate_extraction_prompt(mem_baseline, facts, "", user_id=uid_baseline, wait_seconds=wait_seconds)
+    res_baseline = validate_extraction_prompt(
+        mem_baseline, facts, "", user_id=uid_baseline, wait_seconds=wait_seconds
+    )
+
+    if is_http:
+        result["cleanup"]["baseline"] = isolation_only_receipt(
+            uid_baseline, "HTTP backends are not guaranteed to expose delete; isolation relies "
+            "on a per-run user_id instead of removing stored facts."
+        )
+    else:
+        result["cleanup"]["baseline"] = cleanup_test_memories(mem_baseline, user_id=uid_baseline)
 
     initial_score = res_baseline["score"]
     initial_pct = initial_score / n_facts * 100
@@ -249,6 +272,7 @@ def run_generate(
         for d in res_baseline["details"]:
             icon = "✅" if d["found"] else "❌"
             print(f"    {icon} {d['label']}")
+        print(f"  Cleanup: {result['cleanup']['baseline']}")
 
     if initial_score >= n_facts:
         if verbose:
@@ -276,7 +300,17 @@ def run_generate(
     )
     if not is_http:
         cleanup_test_memories(mem_improved, user_id=uid_improved)
-    res_improved = validate_extraction_prompt(mem_improved, facts, "", user_id=uid_improved, wait_seconds=wait_seconds)
+    res_improved = validate_extraction_prompt(
+        mem_improved, facts, "", user_id=uid_improved, wait_seconds=wait_seconds
+    )
+
+    if is_http:
+        result["cleanup"]["improved"] = isolation_only_receipt(
+            uid_improved, "HTTP backends are not guaranteed to expose delete; isolation relies "
+            "on a per-run user_id instead of removing stored facts."
+        )
+    else:
+        result["cleanup"]["improved"] = cleanup_test_memories(mem_improved, user_id=uid_improved)
 
     improved_score = res_improved["score"]
     improved_pct = improved_score / n_facts * 100
@@ -292,6 +326,7 @@ def run_generate(
         for d in res_improved["details"]:
             icon = "✅" if d["found"] else "❌"
             print(f"    {icon} {d['label']}")
+        print(f"  Cleanup: {result['cleanup']['improved']}")
 
     # --- Phase 3: Apply ---
     if improvement_pp > 0 and improved_score >= max(initial_score, 4):

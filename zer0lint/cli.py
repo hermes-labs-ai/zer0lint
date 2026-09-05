@@ -111,6 +111,15 @@ def check(
             icon = "✅" if d["found"] else ("⚠ " if d.get("stored") else "❌")
             console.print(f"  {icon} {d['label']}")
 
+    cleanup = result.get("cleanup", {})
+    if cleanup.get("mode") == "delete":
+        console.print(
+            f"Cleanup: {cleanup['deleted']}/{cleanup['attempted']} test memories deleted"
+            + (f" ({cleanup['failed']} failed)" if cleanup["failed"] else "")
+        )
+    elif cleanup.get("mode") == "isolated_no_delete":
+        console.print(f"Cleanup: isolated by user_id {cleanup['user_id']!r} (no delete performed)")
+
     if result["status"] in ("DEGRADED", "CRITICAL"):
         console.print(
             "\n[yellow]Run [bold]zer0lint generate[/bold] to diagnose and fix.[/yellow]"
@@ -192,6 +201,16 @@ def generate(
     if not result["success"]:
         err_console.print("[red]✗ Generate failed.[/red]")
         raise typer.Exit(1)
+
+    for phase, receipt in result.get("cleanup", {}).items():
+        if receipt.get("mode") == "delete":
+            deleted, attempted = receipt["deleted"], receipt["attempted"]
+            failed_note = f" ({receipt['failed']} failed)" if receipt["failed"] else ""
+            console.print(
+                f"  Cleanup ({phase}): {deleted}/{attempted} test memories deleted{failed_note}"
+            )
+        elif receipt.get("mode") == "isolated_no_delete":
+            console.print(f"  Cleanup ({phase}): isolated by user_id (no delete performed)")
 
     if result.get("verdict") == "already_healthy":
         console.print("\n[green]✅ Your extraction is already at 100%. No changes needed.[/green]")

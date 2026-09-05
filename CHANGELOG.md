@@ -1,5 +1,30 @@
 # Changelog
 
+## 0.3.0
+
+Problem: `check` and `generate` wrote synthetic test facts into a real mem0
+store to measure extraction survival, but never removed them and gave no
+signal about what was left behind — every run silently accumulated test data
+with no receipt to audit or clean up against.
+
+- `check` and `generate` now delete the test facts they write in mem0 mode
+  after each phase and return a machine-readable cleanup receipt
+  (`attempted`/`deleted`/`failed`/`errors`) instead of leaving test data
+  behind with no record of what happened. Printed on `check -v` and
+  `generate`, and returned under `result["cleanup"]` for scripting.
+- HTTP mode still cannot delete (the generic add/search contract has no
+  delete endpoint) — the receipt now reports this explicitly as
+  `"mode": "isolated_no_delete"` rather than silently doing nothing, and
+  isolation still depends entirely on the backend scoping reads by the
+  per-run random `user_id`.
+- Added a regression test against the actually-installed Mem0 `MemoryConfig`
+  (not just fakes) to catch upstream schema drift immediately.
+- Added a generic, disposable local HTTP fixture (`tests/http_fixture.py`)
+  and adapter tests (`tests/test_http_adapter.py`) that exercise HTTP mode
+  end-to-end without contacting a real memory store.
+- Documented exact write/cleanup side effects and recovery steps in the
+  README under "Side Effects & Recovery."
+
 ## 0.2.4
 
 - Use Mem0's current `custom_instructions` field while retaining compatibility

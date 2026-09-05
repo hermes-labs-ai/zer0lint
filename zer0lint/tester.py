@@ -295,20 +295,71 @@ def count_stored_memories(memory: object, user_id: str = "zer0lint_test_user") -
         return -1
 
 
-def cleanup_test_memories(memory: object, user_id: str = "zer0lint_test_user") -> int:
-    """Delete all test memories for isolation. Returns count deleted."""
-    deleted = 0
+def cleanup_test_memories(memory: object, user_id: str = "zer0lint_test_user") -> dict:
+    """
+    Delete all test memories for a user_id and report exactly what happened.
+
+    zer0lint writes synthetic test facts into the caller's own memory backend
+    (isolated by user_id and/or a suffixed collection name). This is the one
+    place that guarantees those facts don't linger — every outcome (deleted,
+    skipped, or failed) is recorded so a run's cleanup can be audited without
+    re-querying the backend.
+
+    Returns a machine-readable receipt:
+        {
+            "mode": "delete",
+            "user_id": str,
+            "attempted": int,   # memories found for user_id
+            "deleted": int,     # successfully deleted
+            "failed": int,      # delete() raised
+            "errors": [str],    # truncated error messages, one per failure
+        }
+    """
+    receipt = {
+        "mode": "delete",
+        "user_id": user_id,
+        "attempted": 0,
+        "deleted": 0,
+        "failed": 0,
+        "errors": [],
+    }
+
     try:
         response = memory.get_all(user_id=user_id)
         memories = _get_results_list(response)
-        for m in memories:
-            mem_id = m.get("id") if isinstance(m, dict) else None
-            if mem_id:
-                try:
-                    memory.delete(memory_id=mem_id)
-                    deleted += 1
-                except Exception:
-                    pass
-    except Exception:
-        pass
-    return deleted
+    except Exception as e:
+        receipt["errors"].append(f"get_all({user_id}): {str(e)[:120]}")
+        return receipt
+
+    for m in memories:
+        mem_id = m.get("id") if isinstance(m, dict) else None
+        if not mem_id:
+            continue
+        receipt["attempted"] += 1
+        try:
+            memory.delete(memory_id=mem_id)
+            receipt["deleted"] += 1
+        except Exception as e:
+            receipt["failed"] += 1
+            receipt["errors"].append(f"delete({mem_id}): {str(e)[:120]}")
+
+    return receipt
+
+
+def isolation_only_receipt(user_id: str, reason: str) -> dict:
+    """
+    Cleanup receipt for backends that don't support delete (e.g. generic HTTP mode).
+
+    Isolation still holds (a unique user_id per run keeps test facts out of a
+    real user's recall results), but nothing is deleted, so the receipt says so
+    explicitly instead of reporting deleted=0 with no explanation.
+    """
+    return {
+        "mode": "isolated_no_delete",
+        "user_id": user_id,
+        "attempted": 0,
+        "deleted": 0,
+        "failed": 0,
+        "errors": [],
+        "note": reason,
+    }
