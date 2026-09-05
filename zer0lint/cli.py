@@ -202,6 +202,16 @@ def generate(
         err_console.print("[red]✗ Generate failed.[/red]")
         raise typer.Exit(1)
 
+    for phase, receipt in result.get("cleanup", {}).items():
+        if receipt.get("mode") == "delete":
+            deleted, attempted = receipt["deleted"], receipt["attempted"]
+            failed_note = f" ({receipt['failed']} failed)" if receipt["failed"] else ""
+            console.print(
+                f"  Cleanup ({phase}): {deleted}/{attempted} test memories deleted{failed_note}"
+            )
+        elif receipt.get("mode") == "isolated_no_delete":
+            console.print(f"  Cleanup ({phase}): isolated by user_id (no delete performed)")
+
     if result.get("verdict") == "already_healthy":
         console.print("\n[green]✅ Your extraction is already at 100%. No changes needed.[/green]")
         raise typer.Exit(0)
@@ -216,16 +226,6 @@ def generate(
     console.print(f"  After  : {result['improved_score']}/{result.get('total', 5) if 'total' in result else 5} ({impr_pct:.0f}%)")
     imp_color = "green" if imp_pp > 0 else "red"
     console.print(f"  Δ      : [{imp_color}]{imp_pp:+.0f}pp[/{imp_color}]")
-
-    for phase, receipt in result.get("cleanup", {}).items():
-        if receipt.get("mode") == "delete":
-            deleted, attempted = receipt["deleted"], receipt["attempted"]
-            failed_note = f" ({receipt['failed']} failed)" if receipt["failed"] else ""
-            console.print(
-                f"  Cleanup ({phase}): {deleted}/{attempted} test memories deleted{failed_note}"
-            )
-        elif receipt.get("mode") == "isolated_no_delete":
-            console.print(f"  Cleanup ({phase}): isolated by user_id (no delete performed)")
 
     verdict = result.get("verdict")
     if verdict == "improved" and result.get("applied"):
