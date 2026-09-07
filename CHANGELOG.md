@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- `.zenodo.json` now declares version 0.3.0 so the Zenodo record minted from a
+  GitHub release matches `CITATION.cff` and `pyproject.toml`. The 0.3.0 release
+  record (10.5281/zenodo.22315878) was archived as version 0.2.1 because this
+  file was stale.
+
 ## 0.3.0
 
 Problem: `check` and `generate` wrote synthetic test facts into a real mem0
