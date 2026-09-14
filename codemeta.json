@@ -1,0 +1,17 @@
+{
+  "@context": "https://w3id.org/codemeta/3.1",
+  "@type": "SoftwareSourceCode",
+  "name": "zer0lint",
+  "description": "Memory extraction diagnostics for mem0 configs and HTTP memory endpoints.",
+  "codeRepository": "https://github.com/hermes-labs-ai/zer0lint",
+  "version": "0.3.0",
+  "license": "https://spdx.org/licenses/Apache-2.0",
+  "programmingLanguage": "Python",
+  "runtimePlatform": "Python >=3.9",
+  "identifier": [
+    "https://pypi.org/project/zer0lint/0.3.0/"
+  ],
+  "author": [{"@type": "Person", "givenName": "Rolando", "familyName": "Bosch Rodriguez", "identifier": "https://orcid.org/0009-0005-4896-1112"}],
+  "url": "https://github.com/hermes-labs-ai/zer0lint",
+  "keywords": ["AI reliability", "AI assurance", "memory extraction", "mem0", "agent memory", "verification by effect"]
+}
