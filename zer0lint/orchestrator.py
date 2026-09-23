@@ -1,10 +1,11 @@
-"""Main orchestrator for zer0lint v0.2 — config-level injection, validated flow."""
+"""Mem0 prompt comparison and HTTP fact-survival checks."""
 
 from __future__ import annotations
 
 import json
 from pathlib import Path
 from typing import Optional
+from uuid import uuid4
 
 from zer0lint.fixer import (
     CURRENT_EXTRACTION_PROMPT_FIELD,
@@ -26,7 +27,7 @@ Types: personal preferences, dates, relationships, activities, health, professio
 Return as JSON: {"facts": ["fact1", ...]}
 Input: Hi. Output: {"facts": []}"""
 
-# zer0lint's technical-domain prompt (validated: 5/5 recall vs 2/5 with personal prompt)
+# zer0lint's fixed technical-domain extraction prompt
 TECHNICAL_EXTRACTION_PROMPT = """You are a Technical Memory Organizer for an AI agent workspace. Extract ALL factual statements from the input — technical decisions, infrastructure changes, product details, research findings, scores, dates, names, URLs, versions, and architectural choices.
 
 Types of information to extract:
@@ -127,11 +128,13 @@ def run_check(
     wait_seconds: float = 1.5,
 ) -> dict:
     """
-    Baseline recall test — works with mem0 config or any HTTP memory endpoint.
+    Baseline fact-survival test for mem0 or compatible HTTP endpoints.
 
     Returns dict: score, total, pct, status, details
     """
     is_http = bool(add_url and search_url)
+    if n_facts < 1:
+        raise ValueError("--facts must be at least 1")
 
     if verbose:
         if not is_http:
@@ -147,7 +150,7 @@ def run_check(
         http_user_id=http_user_id,
         collection_suffix="check",
     )
-    uid = getattr(memory, "default_user_id", "zer0lint_check")
+    uid = getattr(memory, "default_user_id", f"zer0lint_{uuid4().hex[:8]}_check")
     if not is_http:
         # Clear any leftover test data from a prior interrupted run before writing new facts.
         cleanup_test_memories(memory, user_id=uid)
@@ -167,7 +170,9 @@ def run_check(
     total = results["total"]
     pct = score / total * 100 if total > 0 else 0
 
-    if pct >= 80:
+    if results["failures"]:
+        status = "INCONCLUSIVE"
+    elif pct >= 80:
         status = "HEALTHY"
     elif pct >= 60:
         status = "ACCEPTABLE"
@@ -207,15 +212,25 @@ def run_generate(
     wait_seconds: float = 1.5,
 ) -> dict:
     """
-    Full zer0lint generate flow (3 phases) — works with mem0 config or HTTP endpoints.
+    Full zer0lint generate flow (3 phases) for a local mem0 config.
 
       Phase 1: Baseline recall test
       Phase 2: Re-test with zer0lint technical extraction prompt
-      Phase 3: Apply fix — writes to config (mem0 mode) or saves to file (HTTP mode)
+      Phase 3: Apply fix to config if the comparison improves
 
     Returns dict with: initial_score, improved_score, improvement_pp, applied, prompt, status
     """
     is_http = bool(add_url and search_url)
+    if n_facts < 1:
+        raise ValueError("--facts must be at least 1")
+    if is_http:
+        raise ValueError(
+            "HTTP add/search endpoints cannot test a changed extraction prompt. "
+            "Use generate with a mem0 --config, or change your backend's prompt "
+            "and run check again."
+        )
+    if save_prompt_path is not None:
+        raise ValueError("--save-prompt is unsupported; generate writes only to a mem0 config")
 
     result = {
         "success": False,
@@ -233,48 +248,39 @@ def run_generate(
     }
 
     facts = generate_test_facts_for_categories(["technical", "research"], count=n_facts)
+    total = len(facts)
+    result["total"] = total
     # --- Phase 1: Baseline ---
     if verbose:
         print("\n[1/3] Baseline — testing current config as-is...")
 
-    mem_baseline = _make_backend(
-        base_config=base_config,
-        add_url=add_url, search_url=search_url,
-        http_timeout=http_timeout, http_user_id=http_user_id,
-        collection_suffix="baseline",
-    )
-    uid_baseline = (
-        f"{http_user_id}_baseline"
-        if is_http and http_user_id
-        else getattr(mem_baseline, "default_user_id", "zer0lint_baseline")
-    )
-    if not is_http:
-        cleanup_test_memories(mem_baseline, user_id=uid_baseline)
+    mem_baseline = _make_memory(base_config, collection_suffix="baseline")
+    run_id = uuid4().hex[:8]
+    uid_baseline = f"zer0lint_{run_id}_baseline"
+    cleanup_test_memories(mem_baseline, user_id=uid_baseline)
     res_baseline = validate_extraction_prompt(
         mem_baseline, facts, "", user_id=uid_baseline, wait_seconds=wait_seconds
     )
 
-    if is_http:
-        result["cleanup"]["baseline"] = isolation_only_receipt(
-            uid_baseline, "HTTP backends are not guaranteed to expose delete; isolation relies "
-            "on a per-run user_id instead of removing stored facts."
-        )
-    else:
-        result["cleanup"]["baseline"] = cleanup_test_memories(mem_baseline, user_id=uid_baseline)
+    result["cleanup"]["baseline"] = cleanup_test_memories(mem_baseline, user_id=uid_baseline)
 
     initial_score = res_baseline["score"]
-    initial_pct = initial_score / n_facts * 100
+    initial_pct = initial_score / total * 100
     result["initial_score"] = initial_score
     result["initial_pct"] = initial_pct
 
+    result["baseline_failures"] = res_baseline["failures"]
+
     if verbose:
-        print(f"  Baseline score: {initial_score}/{n_facts} ({initial_pct:.0f}%)")
+        print(f"  Baseline score: {initial_score}/{total} ({initial_pct:.0f}%)")
+        for failure in res_baseline["failures"]:
+            print(f"  Baseline error: {failure}")
         for d in res_baseline["details"]:
             icon = "✅" if d["found"] else "❌"
             print(f"    {icon} {d['label']}")
         print(f"  Cleanup: {result['cleanup']['baseline']}")
 
-    if initial_score >= n_facts:
+    if initial_score >= total:
         if verbose:
             print("\n✅ Extraction is already perfect. No changes needed.")
         result["success"] = True
@@ -286,34 +292,19 @@ def run_generate(
     if verbose:
         print("\n[2/3] Re-testing with zer0lint technical extraction prompt...")
 
-    mem_improved = _make_backend(
-        base_config=base_config,
-        add_url=add_url, search_url=search_url,
-        http_timeout=http_timeout, http_user_id=http_user_id,
-        custom_prompt=TECHNICAL_EXTRACTION_PROMPT,
-        collection_suffix="improved",
+    mem_improved = _make_memory(
+        base_config, custom_prompt=TECHNICAL_EXTRACTION_PROMPT, collection_suffix="improved"
     )
-    uid_improved = (
-        f"{http_user_id}_improved"
-        if is_http and http_user_id
-        else getattr(mem_improved, "default_user_id", "zer0lint_improved")
-    )
-    if not is_http:
-        cleanup_test_memories(mem_improved, user_id=uid_improved)
+    uid_improved = f"zer0lint_{run_id}_improved"
+    cleanup_test_memories(mem_improved, user_id=uid_improved)
     res_improved = validate_extraction_prompt(
         mem_improved, facts, "", user_id=uid_improved, wait_seconds=wait_seconds
     )
 
-    if is_http:
-        result["cleanup"]["improved"] = isolation_only_receipt(
-            uid_improved, "HTTP backends are not guaranteed to expose delete; isolation relies "
-            "on a per-run user_id instead of removing stored facts."
-        )
-    else:
-        result["cleanup"]["improved"] = cleanup_test_memories(mem_improved, user_id=uid_improved)
+    result["cleanup"]["improved"] = cleanup_test_memories(mem_improved, user_id=uid_improved)
 
     improved_score = res_improved["score"]
-    improved_pct = improved_score / n_facts * 100
+    improved_pct = improved_score / total * 100
     improvement_pp = improved_pct - initial_pct
     result["improved_score"] = improved_score
     result["improved_pct"] = improved_pct
@@ -321,28 +312,30 @@ def run_generate(
     result["prompt"] = TECHNICAL_EXTRACTION_PROMPT
 
     if verbose:
-        print(f"  Improved score: {improved_score}/{n_facts} ({improved_pct:.0f}%)")
-        print(f"  Improvement: {improvement_pp:+.0f}pp")
+        print(f"  Re-test score: {improved_score}/{total} ({improved_pct:.0f}%)")
+        if not (res_baseline["failures"] or res_improved["failures"]):
+            print(f"  Improvement: {improvement_pp:+.0f}pp")
         for d in res_improved["details"]:
             icon = "✅" if d["found"] else "❌"
             print(f"    {icon} {d['label']}")
         print(f"  Cleanup: {result['cleanup']['improved']}")
 
+    if res_improved["failures"]:
+        result["verdict"] = "measurement_error"
+        result["failures"] = res_improved["failures"]
+        return result
+
+    if res_baseline["failures"]:
+        # A failed add/search can be a backend problem. Even a clean re-test
+        # cannot attribute the difference to the extraction prompt alone.
+        result["verdict"] = "measurement_error"
+        result["failures"] = res_baseline["failures"]
+        return result
+
     # --- Phase 3: Apply ---
-    if improvement_pp > 0 and improved_score >= max(initial_score, 4):
+    if improvement_pp > 0 and improved_score >= max(initial_score, min(4, total)):
         result["verdict"] = "improved"
-        if is_http:
-            # HTTP mode: no config to write — save prompt to file if requested
-            if save_prompt_path:
-                p = Path(save_prompt_path)
-                p.write_text(TECHNICAL_EXTRACTION_PROMPT)
-                result["saved_prompt_path"] = str(p)
-                if verbose:
-                    print(f"\n[3/3] Prompt saved to {p}")
-            else:
-                if verbose:
-                    print("\n[3/3] Use --save-prompt <file> to save the prompt, then add it to your memory system's extraction config.")
-        elif config_path:
+        if config_path:
             if verbose:
                 print(f"\n[3/3] Applying fix to config ({initial_pct:.0f}% → {improved_pct:.0f}%)...")
             apply_result = apply_prompt(config_path, TECHNICAL_EXTRACTION_PROMPT, backup=True)

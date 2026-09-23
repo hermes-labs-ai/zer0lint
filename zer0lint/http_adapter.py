@@ -1,4 +1,4 @@
-"""HTTP adapter for zer0lint — works with any memory system over HTTP.
+"""HTTP adapter for services implementing zer0lint's JSON add/search contract.
 
 Contract for the remote endpoints:
 

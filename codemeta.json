@@ -2,14 +2,14 @@
   "@context": "https://w3id.org/codemeta/3.1",
   "@type": "SoftwareSourceCode",
   "name": "zer0lint",
-  "description": "Memory extraction diagnostics for mem0 configs and HTTP memory endpoints.",
+  "description": "Fact-survival checks for memory backends and extraction-prompt comparison for mem0.",
   "codeRepository": "https://github.com/hermes-labs-ai/zer0lint",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "license": "https://spdx.org/licenses/Apache-2.0",
   "programmingLanguage": "Python",
   "runtimePlatform": "Python >=3.9",
   "identifier": [
-    "https://pypi.org/project/zer0lint/0.3.0/"
+    "https://pypi.org/project/zer0lint/0.4.0/"
   ],
   "author": [{"@type": "Person", "givenName": "Rolando", "familyName": "Bosch Rodriguez", "identifier": "https://orcid.org/0009-0005-4896-1112"}],
   "url": "https://github.com/hermes-labs-ai/zer0lint",

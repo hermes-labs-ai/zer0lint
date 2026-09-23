@@ -2,10 +2,24 @@
 
 ## Unreleased
 
-- `.zenodo.json` now declares version 0.3.0 so the Zenodo record minted from a
-  GitHub release matches `CITATION.cff` and `pyproject.toml`. The 0.3.0 release
-  record (10.5281/zenodo.22315878) was archived as version 0.2.1 because this
-  file was stale.
+## 0.4.0
+
+- HTTP `generate` now rejects add/search endpoints before writing any test
+  facts. Those endpoints cannot accept the changed extraction prompt, so the
+  previous before/after comparison was invalid.
+- `check` now reports add/search errors as `INCONCLUSIVE` with a nonzero exit
+  code; low fact-survival scores also give nonzero exit codes for scripts.
+- Mem0 `generate` runs a comparison after a baseline add/search error, but
+  reports `INCONCLUSIVE` and never writes the config when either phase errors.
+- Mem0 checks use a fresh user ID per run so concurrent diagnostics cannot
+  delete each other's test facts.
+- The synthetic technical checks now match distinctive fact values instead of
+  passing on generic words such as “API” or “model.”
+- Documentation and metadata distinguish Mem0 prompt comparison from HTTP
+  round-trip checks.
+- `.zenodo.json` now matches the release version, as do `CITATION.cff` and
+  `pyproject.toml`. The 0.3.0 Zenodo record (10.5281/zenodo.22315878) was
+  archived as version 0.2.1 because this file was stale then.
 
 ## 0.3.0
 

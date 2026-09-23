@@ -2,7 +2,7 @@
 
 <h1>zer0lint</h1>
 
-zer0lint is a memory-extraction diagnostic that flags silent failure modes in mem0 configs and HTTP memory endpoints — cases where ingestion reports success but the facts your agent needed never survive the LLM extraction step.
+zer0lint checks whether facts survive a memory system's add/search round trip. With a local mem0 config, it can compare a replacement extraction prompt and apply it after a clean improvement.
 
 zer0lint is developed by [Hermes Labs](https://hermes-labs.ai).
 
@@ -15,13 +15,13 @@ Hermes Labs is an agentic infrastructure company building the reliability layer 
 
 </div>
 
-`zer0lint` runs a fail-fast extraction health check, shows whether ingestion is actually working, and generates a better extraction prompt when it is not.
+`zer0lint` injects known facts and reports which ones come back. In mem0 config mode, it can compare your configured extraction prompt with a technical-fact prompt before changing the config. HTTP add/search mode measures fact survival but cannot isolate extraction or test a changed prompt.
 
 - "mem0 says add worked, but the agent still forgets the important part."
 - "Search returns something, but not the specific fact I stored."
 - "We switched models and memory quality got worse for no obvious reason."
 - "Our retrieval benchmark looks fine, but the batch behavior is still wrong."
-- "I need to know if extraction is broken before I waste time tuning retrieval."
+- "I need to know whether facts survive before I tune extraction or retrieval."
 
 ```bash
 # For mem0 config mode (includes the mem0 dependency)
@@ -34,24 +34,22 @@ zer0lint check --config ~/.mem0/config.json
 
 ```text
 Score  : 0/5 (0%) — CRITICAL
-Run zer0lint generate to diagnose and fix.
+For a mem0 config, run zer0lint generate to test a prompt change.
 ```
 
 **When To Use It**
 
-Use `zer0lint` when your memory system ingests text through an LLM extraction step and you need to verify whether facts survive that step.
+Use `zer0lint` when an add call succeeds but your agent later misses concrete facts. A low HTTP score tells you to investigate extraction and search separately; a low mem0 score gives you a prompt candidate to test.
 
 **When Not To Use It**
 
-Do not use `zer0lint` for vector-store outages, API connectivity failures, or as proof that one prompt fix will generalize to every memory pipeline.
-
-![zer0lint preview](assets/preview.png)
+Do not use `zer0lint` to pinpoint an HTTP pipeline stage, troubleshoot an API outage, or prove that one prompt fix generalizes to every memory pipeline.
 
 ## The Problem
 
-The failure is invisible. `add()` returns `{"results": [...]}`. `search()` returns results. But when the LLM extraction step produces malformed JSON or drops specifics, the facts never land — degraded fallbacks get stored instead. You won't see an error. You'll just notice your agent doesn't remember.
+The failure can be subtle. `add()` may return results while extraction drops the specific facts your agent needs; on some model and backend combinations it raises an error instead. Either way, the useful question is whether the fact survives a real add/search round trip.
 
-zer0lint surfaces this by injecting known facts and checking how many survive the round-trip. The illustrative output below shows what a failing extraction step looks like — run it against your own config for real numbers:
+zer0lint injects known facts and checks how many survive the round trip. The illustrative output below shows missing facts; inspect the underlying backend to learn whether extraction, indexing, or search lost them:
 
 ```
 Score  : 0/5 — CRITICAL
@@ -73,28 +71,28 @@ pip install "zer0lint[mem0]"
 # Step 1: diagnose
 zer0lint check --config ~/.mem0/config.json
 
-# Step 2: fix (if score < 80%)
-zer0lint generate --config ~/.mem0/config.json
-
-# Dry run first if you want to see what changes before applying
+# Step 2: compare prompts without writing a config change
 zer0lint generate --config ~/.mem0/config.json --dry-run
+
+# Apply only if the comparison improves enough
+zer0lint generate --config ~/.mem0/config.json
 ```
 
 In mem0 config mode, your original config is backed up (timestamped) before any changes are written.
 
-### Universal HTTP mode
+### HTTP add/search mode
 
-Not using mem0? zer0lint works with **any memory system** that exposes add/search over HTTP:
+Not using mem0? Use HTTP mode if your service accepts `POST` JSON with `text` and `user_id` at its add endpoint, and `text`, `limit`, and `user_id` at its search endpoint:
 
 ```bash
-# Point at any memory server — no mem0 dependency needed
+# Point at a server that implements the documented JSON contract
 zer0lint check --add-url http://localhost:19420/add --search-url http://localhost:19420/recall_b
 
-# Generate and save the extraction prompt for your system
-zer0lint generate --add-url http://localhost:19420/add --search-url http://localhost:19420/recall_b --save-prompt prompt.txt
+# A low score means facts did not survive this round trip. Inspect extraction and
+# search in the backend separately; HTTP mode cannot test a changed prompt.
 ```
 
-Works with fidelis, Zep, LangMem, or any custom HTTP memory API.
+The exact request and response contract is below. Other products may need an adapter; their names alone do not establish compatibility.
 
 ---
 
@@ -102,10 +100,10 @@ Works with fidelis, Zep, LangMem, or any custom HTTP memory API.
 
 ### `zer0lint check`
 
-Injects 5 synthetic technical facts into your live mem0 instance, then measures round-trip recall. Uses your existing LLM — no new API keys or models required.
+Injects 5 synthetic technical facts into your selected backend, then measures round-trip recall. Uses your existing backend and credentials. A low score can reflect extraction, indexing, or search. Request errors produce `INCONCLUSIVE` and a nonzero exit code.
 
 ```
-zer0lint v0.3.0 — extraction health check
+zer0lint v0.4.0 — fact-survival check
 Config : ~/.mem0/config.json
 Model  : mistral:7b
 Prompt : default (mem0 built-in)
@@ -123,14 +121,14 @@ Error in new_retrieved_facts: Expecting ',' delimiter: line 1 column 13 (char 12
   ⚠  Version update: Updated Redis cluster to v7.2.4...
 
 Score  : 0/5 (0%) — CRITICAL
-Run zer0lint generate to diagnose and fix.
+If this is a mem0 config, run zer0lint generate to test a prompt change.
 ```
 
 Statuses: **HEALTHY** (≥80%) · **ACCEPTABLE** (60–79%) · **DEGRADED** (40–59%) · **CRITICAL** (<40%)
 
 ### `zer0lint generate`
 
-3-phase diagnostic + fix. Re-tests the prompt on your own config before applying it. It does not write a new prompt unless the re-test scores higher than the baseline.
+3-phase diagnostic + fix for **mem0 config mode**. Re-tests the prompt on your own config before applying it. If either phase has an add or search error, it reports `INCONCLUSIVE` and makes no config change, even if the re-test scored higher. A clean improvement must reach at least 4/5 facts (or all facts if you requested fewer than 4).
 
 1. **Baseline** — test your current config as-is
 2. **Re-test** — apply zer0lint's built-in technical-domain extraction prompt at config level
@@ -172,7 +170,7 @@ memory.add("...", prompt="extract technical facts")  # does nothing
 
 **This has no effect in Mem0 when passed to `add()`.** Extraction instructions must live in the config. Current Mem0 uses `custom_instructions`; older supported Mem0 schemas used `custom_fact_extraction_prompt`. zer0lint detects the installed schema and writes the supported field. There is no error when an unsupported per-call prompt is ignored.
 
-zer0lint writes the validated prompt to the correct location. That's the fix.
+When both test phases complete without add/search errors and the new prompt improves enough, zer0lint writes it to the Mem0 config and backs up the original.
 
 ---
 
@@ -209,13 +207,13 @@ After `zer0lint generate`, it adds:
 
 On an older installed Mem0 schema, zer0lint preserves compatibility by writing the legacy `custom_fact_extraction_prompt` field instead.
 
-If you're using fidelis, your config lives at `~/.cogito/config.json` — same format. Or skip the config entirely and use HTTP mode with fidelis's endpoints.
+For other backends, use the HTTP mode only when their endpoints meet the documented JSON contract. The Mem0 config fix does not apply to them.
 
 ---
 
 ## What zer0lint Checks
 
-zer0lint injects a fixed set of synthetic technical facts into your memory instance, then measures how many survive the extraction round-trip via recall. It reports a score, a percentage, a health status, and per-fact pass/fail so you can see exactly which facts were dropped.
+zer0lint injects synthetic technical facts into your memory instance, then measures how many survive the add/search round trip. It reports a score, a percentage, a status, and per-fact pass/fail. The result cannot identify a failing pipeline stage on its own.
 
 Smaller models that struggle to emit well-formed structured JSON are the common failure case: the default extraction prompt can produce malformed output (`Unterminated string`, `Expecting ',' delimiter`) and silently drop facts. `zer0lint generate` proposes a stronger extraction prompt, re-runs the same check, and only writes the new prompt to config if the score improves — so any improvement is validated on your own model and config, not asserted.
 
@@ -225,7 +223,7 @@ Smaller models that struggle to emit well-formed structured JSON are the common 
 
 zer0lint borrows the LLM you already have configured in your mem0 config. No new API keys, no new models, no cloud calls beyond what you already use.
 
-It injects known facts, measures how many survive the extraction round-trip, generates a prompt that improves the score, validates the improvement, then writes to config. Your original is backed up with an ISO timestamp before anything is changed.
+In Mem0 config mode, it injects known facts, compares their survival under the current config and a technical-fact prompt, then writes that prompt only if the score improves enough. Your original config is backed up before the change. HTTP mode only runs the baseline check.
 
 ---
 
@@ -235,7 +233,7 @@ zer0lint writes to your real backend to run its check. Here's exactly what happe
 
 **What gets written**
 
-- **mem0 mode:** synthetic test facts are added under a suffixed collection name (`<your_collection>_check`, `_baseline`, `_improved`) and an isolated `user_id`, not your production namespace.
+- **mem0 mode:** synthetic test facts are added under a suffixed collection name (`<your_collection>_check`, `_baseline`, `_improved`) and a fresh per-run `user_id`, not your production namespace.
 - **HTTP mode:** synthetic test facts are added under a per-run random `user_id` (e.g. `zer0lint_a1b2c3d4`) via your configured add endpoint. There is no collection suffixing — isolation depends entirely on your backend actually scoping by `user_id`.
 - **Config writes:** `zer0lint generate` only writes to `--config` when the re-tested prompt scores higher than baseline, and always creates a timestamped backup first (`config.backup.<ISO timestamp>`).
 
@@ -286,13 +284,12 @@ pip install -e .
 
 ## Supported Systems
 
-zer0lint works over HTTP with any memory system that exposes add/search endpoints. The HTTP adapter normalizes common response shapes (`results`, `hits`, `memories`, plain lists, and `text`/`content`/`memory` keys), so most agent memory setups work once the two URLs are pointed at the right endpoints.
+The HTTP adapter works with services that implement its JSON add/search request contract. It normalizes several response shapes (`results`, `hits`, `memories`, plain lists, and `text`/`content`/`memory` keys). It does not configure extraction or delete test facts.
 
 | System | Mode | Notes |
 |---|---|---|
 | mem0 v1.x | `--config` flag | Config mode; covered by tests |
-| fidelis | `--add-url` + `--search-url` | Adapter normalizes its `/recall_b` response shape |
-| Any HTTP memory API | `--add-url` + `--search-url` | Works if endpoints follow the add/search contract below |
+| HTTP memory API | `--add-url` + `--search-url` | Works if endpoints follow the add/search contract below |
 
 The HTTP contract the adapter expects is documented in `zer0lint/http_adapter.py`.
 
@@ -306,12 +303,12 @@ Grounded in what the code actually does:
 - **`generate` applies one built-in technical-domain prompt, not a per-domain generated prompt.** The fix it writes is a fixed prompt tuned for technical/agent-workspace facts. It is not adapted to your specific domain, and it is only written when the re-test scores higher than the baseline on your own model and config.
 - **Synthetic test facts are technical/research-flavored.** `check` and `generate` inject facts from the `technical` and `research` sets. If your workload is medical, legal, or financial, the score reflects those technical facts, not your domain.
 - **HTTP mode does not clean up after itself.** It isolates test data with a per-run random `user_id` rather than deleting it. If your backend ignores `user_id`, test facts may persist in the store. mem0 mode does delete its test facts after each phase and reports a pass/fail receipt — see [Side Effects & Recovery](#side-effects--recovery).
-- **It does not debug retrieval, embeddings, or vector-store outages.** It checks the extraction step only. A passing extraction score does not mean retrieval ranking, recall@k, or connectivity are healthy.
+- **It does not pinpoint retrieval, extraction, embeddings, or vector-store failures.** It checks end-to-end fact survival. A passing score on these synthetic facts does not establish production recall quality.
 - **One improving re-test does not imply generalization.** A higher score on the synthetic set is evidence the prompt helps your model on those facts — it is not a claim that it fixes every model, domain, or pipeline.
 
 ## Part of the Hermes Labs Reliability Stack
 
-zer0lint is one of several open-source [Hermes Labs](https://github.com/hermes-labs-ai) tools that catch silent failure modes in production AI. It pairs naturally with memory backends like [fidelis](https://github.com/hermes-labs-ai/fidelis) (verify extraction health over the same HTTP add/search endpoints) rather than duplicating them — zer0lint diagnoses the extraction step; the memory system stores and retrieves.
+zer0lint is one of several open-source [Hermes Labs](https://github.com/hermes-labs-ai) tools for AI reliability. It can check a compatible memory backend's add/search path, or compare extraction prompts in a local mem0 config.
 
 ---
 

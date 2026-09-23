@@ -3,6 +3,8 @@
 import sys
 from types import SimpleNamespace
 
+import pytest
+
 from zer0lint import orchestrator
 
 
@@ -85,69 +87,118 @@ def test_run_check_uses_http_adapters_isolated_user_id(monkeypatch):
     assert seen_user_ids == [backend.default_user_id]
 
 
-def test_run_generate_uses_each_http_adapters_isolated_user_id(monkeypatch):
-    backends = iter(
-        [
-            SimpleNamespace(default_user_id="zer0lint_random-baseline"),
-            SimpleNamespace(default_user_id="zer0lint_random-improved"),
-        ]
-    )
-    seen_user_ids = []
-
-    monkeypatch.setattr(orchestrator, "_make_backend", lambda **kwargs: next(backends))
+def test_mem0_checks_use_distinct_user_ids(monkeypatch):
+    monkeypatch.setattr(orchestrator, "_make_backend", lambda **kwargs: SimpleNamespace())
     monkeypatch.setattr(
-        orchestrator,
-        "generate_test_facts_for_categories",
-        lambda categories, count: [object()],
+        orchestrator, "generate_test_facts_for_categories", lambda categories, count: [object()]
     )
+    seen = []
 
     def validate(memory, facts, prompt, *, user_id, wait_seconds):
-        seen_user_ids.append(user_id)
-        return _result(len(seen_user_ids) - 1)
+        seen.append(user_id)
+        return _result(1)
 
     monkeypatch.setattr(orchestrator, "validate_extraction_prompt", validate)
+    monkeypatch.setattr(orchestrator, "cleanup_test_memories", lambda *args, **kwargs: {})
 
-    result = orchestrator.run_generate(
-        add_url="http://memory.test/add",
-        search_url="http://memory.test/search",
-        n_facts=1,
-        wait_seconds=0,
-    )
+    orchestrator.run_check(base_config={"llm": {}}, n_facts=1, wait_seconds=0)
+    orchestrator.run_check(base_config={"llm": {}}, n_facts=1, wait_seconds=0)
 
-    assert result["success"] is True
-    assert seen_user_ids == [
-        "zer0lint_random-baseline",
-        "zer0lint_random-improved",
-    ]
+    assert len(set(seen)) == 2
+    assert all(uid.startswith("zer0lint_") and uid.endswith("_check") for uid in seen)
 
 
-def test_run_generate_suffixes_explicit_http_user_id_by_phase(monkeypatch):
-    backend = SimpleNamespace(default_user_id="portfolio-check")
-    seen_user_ids = []
-
-    monkeypatch.setattr(orchestrator, "_make_backend", lambda **kwargs: backend)
+def test_mem0_generate_phases_share_run_id_but_have_distinct_user_ids(monkeypatch):
+    monkeypatch.setattr(orchestrator, "_make_memory", lambda *args, **kwargs: SimpleNamespace())
     monkeypatch.setattr(
-        orchestrator,
-        "generate_test_facts_for_categories",
-        lambda categories, count: [object()],
+        orchestrator, "generate_test_facts_for_categories", lambda categories, count: [object()]
     )
+    seen = []
 
     def validate(memory, facts, prompt, *, user_id, wait_seconds):
-        seen_user_ids.append(user_id)
-        return _result(len(seen_user_ids) - 1)
+        seen.append(user_id)
+        return _result(0)
 
     monkeypatch.setattr(orchestrator, "validate_extraction_prompt", validate)
+    monkeypatch.setattr(orchestrator, "cleanup_test_memories", lambda *args, **kwargs: {})
+    orchestrator.run_generate(base_config={"llm": {}}, n_facts=1, wait_seconds=0)
 
-    result = orchestrator.run_generate(
-        add_url="http://memory.test/add",
-        search_url="http://memory.test/search",
-        http_user_id="portfolio-check",
-        n_facts=1,
-        wait_seconds=0,
+    assert len(seen) == 2
+    assert seen[0].removesuffix("_baseline") == seen[1].removesuffix("_improved")
+    assert seen[0] != seen[1]
+
+
+def test_run_generate_rejects_http_before_writing(monkeypatch):
+    def unexpected_backend(**kwargs):
+        raise AssertionError("HTTP backend must not be contacted")
+
+    monkeypatch.setattr(orchestrator, "_make_backend", unexpected_backend)
+    with pytest.raises(ValueError, match="cannot test a changed extraction prompt"):
+        orchestrator.run_generate(
+            add_url="http://memory.test/add",
+            search_url="http://memory.test/search",
+        )
+
+
+def test_run_check_reports_measurement_error_as_inconclusive(monkeypatch):
+    monkeypatch.setattr(orchestrator, "_make_backend", lambda **kwargs: SimpleNamespace())
+    monkeypatch.setattr(
+        orchestrator, "generate_test_facts_for_categories", lambda categories, count: [object()]
+    )
+    monkeypatch.setattr(
+        orchestrator, "validate_extraction_prompt",
+        lambda *args, **kwargs: {**_result(0), "failures": ["search(API endpoint): timeout"]},
+    )
+    result = orchestrator.run_check(
+        add_url="http://memory.test/add", search_url="http://memory.test/search", wait_seconds=0
+    )
+    assert result["status"] == "INCONCLUSIVE"
+
+
+def test_run_generate_does_not_apply_after_measurement_error(monkeypatch):
+    monkeypatch.setattr(orchestrator, "_make_memory", lambda *args, **kwargs: SimpleNamespace())
+    monkeypatch.setattr(
+        orchestrator, "generate_test_facts_for_categories", lambda categories, count: [object()]
+    )
+    scores = iter([_result(0), {**_result(1), "failures": ["search(API endpoint): timeout"]}])
+    monkeypatch.setattr(orchestrator, "validate_extraction_prompt", lambda *args, **kwargs: next(scores))
+    monkeypatch.setattr(orchestrator, "cleanup_test_memories", lambda *args, **kwargs: {})
+    monkeypatch.setattr(
+        orchestrator, "apply_prompt", lambda *args, **kwargs: (_ for _ in ()).throw(
+            AssertionError("must not apply")
+        )
     )
 
-    assert result["success"] is True
-    assert seen_user_ids == ["portfolio-check_baseline", "portfolio-check_improved"]
+    result = orchestrator.run_generate(base_config={"llm": {}}, config_path="config.json", n_facts=1)
+    assert result["success"] is False
+    assert result["verdict"] == "measurement_error"
+    assert result["applied"] is False
+
+
+def test_run_generate_does_not_apply_after_failed_baseline_even_if_retest_is_clean(monkeypatch):
+    monkeypatch.setattr(orchestrator, "_make_memory", lambda *args, **kwargs: SimpleNamespace())
+    monkeypatch.setattr(
+        orchestrator, "generate_test_facts_for_categories", lambda categories, count: [object()]
+    )
+    scores = iter([{**_result(0), "failures": ["search: timeout"]}, _result(1)])
+    monkeypatch.setattr(orchestrator, "validate_extraction_prompt", lambda *args, **kwargs: next(scores))
+    monkeypatch.setattr(orchestrator, "cleanup_test_memories", lambda *args, **kwargs: {})
+    applied = []
+
+    def apply(config_path, prompt, backup):
+        applied.append((config_path, prompt, backup))
+        raise AssertionError("must not apply")
+
+    monkeypatch.setattr(orchestrator, "apply_prompt", apply)
+
+    result = orchestrator.run_generate(base_config={"llm": {}}, config_path="config.json", n_facts=1)
+    assert result["success"] is False
+    assert result["verdict"] == "measurement_error"
+    assert result["applied"] is False
+    assert result["initial_score"] == 0
+    assert result["improved_score"] == 1
+    assert result["baseline_failures"] == ["search: timeout"]
+    assert not applied
 
 
 def test_http_adapter_exposes_generated_or_overridden_user_id(monkeypatch):
