@@ -1,15 +1,21 @@
-# zer0lint
+<div align="center">
+
+<h1>zer0lint</h1>
+
+zer0lint checks whether facts survive a memory system's add/search round trip. With a local mem0 config, it can compare a replacement extraction prompt and apply it after a clean improvement.
+
+zer0lint is developed by [Hermes Labs](https://hermes-labs.ai).
+
+Hermes Labs is an agentic infrastructure company building the reliability layer for autonomous systems.
 
 [![CI](https://github.com/hermes-labs-ai/zer0lint/actions/workflows/ci.yml/badge.svg)](https://github.com/hermes-labs-ai/zer0lint/actions/workflows/ci.yml)
 [![PyPI](https://img.shields.io/pypi/v/zer0lint.svg)](https://pypi.org/project/zer0lint/)
 [![Python](https://img.shields.io/pypi/pyversions/zer0lint.svg)](https://pypi.org/project/zer0lint/)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 
-zer0lint checks whether facts survive a memory system's add/search round trip. For a local mem0 config, it can test a replacement extraction prompt and apply it if the score improves. HTTP add/search mode measures fact survival, but cannot identify extraction as the failing stage or test a changed prompt.
+</div>
 
-> Part of the [Hermes Labs](https://github.com/hermes-labs-ai) reliability stack.
-
-`zer0lint` injects known facts and reports which ones come back. In mem0 config mode, it can compare your configured extraction prompt with a technical-fact prompt before changing the config.
+`zer0lint` injects known facts and reports which ones come back. In mem0 config mode, it can compare your configured extraction prompt with a technical-fact prompt before changing the config. HTTP add/search mode measures fact survival but cannot isolate extraction or test a changed prompt.
 
 - "mem0 says add worked, but the agent still forgets the important part."
 - "Search returns something, but not the specific fact I stored."
@@ -314,6 +320,6 @@ Apache 2.0
 
 ## About Hermes Labs
 
-[Hermes Labs](https://hermes-labs.ai) is an AI reliability engineering studio for product and engineering teams shipping production agents and LLM applications. We find the structural AI failures standard evals miss, then harden retrieval, memory, agents, and the language layers around production AI systems with runtime controls and defensible evidence.
+Hermes Labs is an agentic infrastructure company building the reliability layer for autonomous systems.
 
 Browse the [open-source catalog](https://hermes-labs.ai/open-source) or contact [roli@hermes-labs.ai](mailto:roli@hermes-labs.ai).
