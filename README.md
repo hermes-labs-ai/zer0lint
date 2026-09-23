@@ -1,15 +1,19 @@
-# zer0lint
+<div align="center">
+
+<h1>zer0lint</h1>
+
+zer0lint is a memory-extraction diagnostic that flags silent failure modes in mem0 configs and HTTP memory endpoints — cases where ingestion reports success but the facts your agent needed never survive the LLM extraction step.
+
+zer0lint is developed by [Hermes Labs](https://hermes-labs.ai).
+
+Hermes Labs is an agentic infrastructure company building the reliability layer for autonomous systems.
 
 [![CI](https://github.com/hermes-labs-ai/zer0lint/actions/workflows/ci.yml/badge.svg)](https://github.com/hermes-labs-ai/zer0lint/actions/workflows/ci.yml)
 [![PyPI](https://img.shields.io/pypi/v/zer0lint.svg)](https://pypi.org/project/zer0lint/)
 [![Python](https://img.shields.io/pypi/pyversions/zer0lint.svg)](https://pypi.org/project/zer0lint/)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 
-zer0lint is a memory-extraction diagnostic that flags silent failure modes in mem0 configs and HTTP memory endpoints — cases where ingestion reports success but the facts your agent needed never survive the LLM extraction step.
-
-zer0lint is developed by [Hermes Labs](https://hermes-labs.ai).
-
-Hermes Labs studies failure modes in agent and LLM systems, develops open-source tools that treat language as part of the runtime, and works with teams to remediate reliability failures in production.
+</div>
 
 `zer0lint` runs a fail-fast extraction health check, shows whether ingestion is actually working, and generates a better extraction prompt when it is not.
 
@@ -319,6 +323,6 @@ Apache 2.0
 
 ## About Hermes Labs
 
-Hermes Labs studies failure modes in agent and LLM systems, develops open-source tools that treat language as part of the runtime, and works with teams to remediate reliability failures in production.
+Hermes Labs is an agentic infrastructure company building the reliability layer for autonomous systems.
 
 Browse the [open-source catalog](https://hermes-labs.ai/open-source) or contact [roli@hermes-labs.ai](mailto:roli@hermes-labs.ai).
