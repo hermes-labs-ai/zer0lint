@@ -1,17 +1,17 @@
 # AGENTS.md
 
-`zer0lint` diagnoses silent memory extraction failures and can generate a better extraction prompt when the baseline is bad.
+`zer0lint` checks whether facts survive a memory backend's add/search round trip. For a local mem0 config, it can compare and apply a better extraction prompt.
 
 ## Use it for
 
-- checking whether facts survive the extraction step
-- verifying mem0 config behavior before tuning retrieval
-- testing any memory service with HTTP add/search endpoints
+- checking whether facts survive Mem0 or compatible HTTP add/search endpoints
+- comparing a replacement prompt for a local mem0 config
+- verifying fact survival before tuning the memory pipeline
 
 ## Do not use it for
 
-- vector-store outages
-- API credential failures
+- diagnosing which HTTP pipeline stage lost a fact
+- vector-store outages or API credential failures
 - proving a generated prompt will generalize to every model or domain
 
 ## Minimal commands
@@ -30,13 +30,13 @@ pytest -q
 
 ## Success means
 
-- `check` gives a clear HEALTHY, ACCEPTABLE, DEGRADED, or CRITICAL verdict
-- `generate` only writes when the improved prompt actually performs better
+- `check` gives a HEALTHY, ACCEPTABLE, DEGRADED, CRITICAL, or INCONCLUSIVE verdict
+- `generate` only writes a mem0 config when both phases are error-free and the re-test improves enough
 - backups are created before config writes in mem0 mode
 
 ## Common failure cases
 
-- users debug retrieval before confirming extraction health
+- users tune prompts or retrieval without checking fact survival
 - `--config` is mixed with `--add-url` or `--search-url`
 - a team expects `memory.add(..., prompt=...)` to override extraction behavior in mem0
 
@@ -48,3 +48,7 @@ and writes only the field it accepts.
 mode deletes them; HTTP mode isolates by user_id only) and return the outcome as
 a machine-readable `cleanup` receipt (`attempted`/`deleted`/`failed`/`errors`) —
 see README "Side Effects & Recovery" for the full contract.
+
+HTTP `generate` is unsupported: add/search endpoints cannot test a changed
+extraction prompt. Use `check` for HTTP fact survival and investigate extraction
+versus search in the backend.

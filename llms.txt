@@ -1,21 +1,25 @@
 # zer0lint
 
-Extraction health checks for mem0 configs and HTTP memory endpoints.
+Fact-survival checks for mem0 configs and compatible HTTP memory endpoints.
 
 Use this repo when you need to:
-- verify whether facts survive the extraction step
-- fail fast before tuning retrieval or embeddings
-- generate a stronger extraction prompt after a bad baseline
+- verify whether synthetic facts survive an add/search round trip
+- compare and apply a technical-fact extraction prompt in local mem0 config mode
+- investigate HTTP extraction and search separately after a low score
 
 Primary commands:
 - `zer0lint check --config ~/.mem0/config.json`
 - `zer0lint generate --config ~/.mem0/config.json --dry-run`
 - `zer0lint check --add-url http://localhost:19420/add --search-url http://localhost:19420/recall_b`
 
+HTTP `generate` is unsupported because add/search endpoints cannot test a
+changed extraction prompt.
+
 Outputs:
 - score
 - percentage
 - health status
+- inconclusive status and nonzero exit code on add/search errors
 - per-fact details
 - before/after improvement summary for `generate`
 
@@ -28,4 +32,3 @@ Do not use this repo as:
 ## About Hermes Labs
 
 Hermes Labs is an independent AI-reliability lab building open-source tools that catch silent failure modes in production AI. More at https://hermes-labs.ai
-

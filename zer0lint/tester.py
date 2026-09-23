@@ -32,27 +32,27 @@ def generate_test_facts_for_categories(categories: list[str], count: int = 5) ->
             SyntheticFact(
                 label="API endpoint",
                 text="The API service runs on port 8421 with TLS 1.3 enabled.",
-                keywords=["8421", "port", "api"],
+                keywords=["8421"],
             ),
             SyntheticFact(
                 label="Model upgrade",
                 text="We switched from gpt-3.5-turbo to gpt-4o-mini to reduce token costs by 40%.",
-                keywords=["gpt-4o-mini", "model", "tokens"],
+                keywords=["gpt-4o-mini"],
             ),
             SyntheticFact(
                 label="Version update",
                 text="Updated Redis cluster to v7.2.4 with improved persistence.",
-                keywords=["7.2.4", "redis", "version"],
+                keywords=["7.2.4"],
             ),
             SyntheticFact(
                 label="CI status",
                 text="CI pipeline passed on 2026-03-22 at commit a3f8c12.",
-                keywords=["2026-03-22", "ci", "passed"],
+                keywords=["a3f8c12"],
             ),
             SyntheticFact(
                 label="Configuration",
                 text="Auth tokens expire after 3600 seconds; max connections set to 500.",
-                keywords=["3600", "token", "config"],
+                keywords=["3600"],
             ),
         ],
         "research": [

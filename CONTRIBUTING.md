@@ -18,6 +18,6 @@ python -m py_compile zer0lint/*.py
 
 ## Contribution rules
 
-- keep the tool focused on extraction diagnostics, not broad memory orchestration
+- keep the tool focused on fact-survival checks and Mem0 extraction-prompt comparison
 - add tests for new CLI flags or diagnostic behavior
 - avoid examples that depend on private configs, prompts, or memory data
