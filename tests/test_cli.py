@@ -41,7 +41,7 @@ def test_generate_rejects_http_before_writing(monkeypatch):
         ["generate", "--add-url", "http://localhost/add", "--search-url", "http://localhost/search"],
     )
     assert result.exit_code == 2
-    assert "cannot test a changed extraction prompt" in result.stderr
+    assert "cannot test a changed extraction prompt" in result.output
 
 
 def test_check_reports_http_transport_failure_as_inconclusive(monkeypatch):
@@ -63,5 +63,5 @@ def test_check_reports_http_transport_failure_as_inconclusive(monkeypatch):
         ["check", "--add-url", "http://localhost/add", "--search-url", "http://localhost/search"],
     )
     assert result.exit_code == 1
-    assert "INCONCLUSIVE" in result.stdout
-    assert "search(API endpoint): timeout" in result.stderr
+    assert "INCONCLUSIVE" in result.output
+    assert "search(API endpoint): timeout" in result.output
