@@ -1,5 +1,11 @@
 # AGENTS.md
 
+## Context boundary
+
+Each new user task starts from the current repository and selected backend.
+Re-check the actual config and results; do not carry a prior run's score or
+prompt decision into another task.
+
 `zer0lint` checks whether facts survive a memory backend's add/search round trip. For a local mem0 config, it can compare and apply a better extraction prompt.
 
 ## Use it for
